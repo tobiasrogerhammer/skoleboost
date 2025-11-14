@@ -6,39 +6,14 @@ import { BottomNav } from './components/BottomNav'
 import { MainPage } from './components/MainPage'
 import { SchedulePage } from './components/SchedulePage'
 import { ProfilePage } from './components/ProfilePage'
+import { TeacherDashboard } from './components/TeacherDashboard'
+import { TeacherSchedulePage } from './components/TeacherSchedulePage'
+import { TeacherProfilePage } from './components/TeacherProfilePage'
 import UserJourneyMap from './UserJourneyMap'
 import AcademicJourneyMap from './AcademicJourneyMap'
 import { toast } from 'sonner'
-import { Map, BookOpen } from 'lucide-react'
+import { Map, BookOpen, User, GraduationCap } from 'lucide-react'
 import { Button } from './components/ui/button'
-
-// Helper function to decode JWT token and extract user ID
-function decodeJWT(token: string): string | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    
-    // Log payload for debugging
-    console.log("JWT payload keys:", Object.keys(payload));
-    console.log("JWT payload aud claim:", payload.aud);
-    console.log("JWT payload sub claim:", payload.sub);
-    
-    // Check if 'aud' claim is set to 'convex'
-    if (payload.aud !== 'convex') {
-      console.warn("⚠️ WARNING: JWT token 'aud' claim is not set to 'convex'. Current value:", payload.aud);
-      console.warn("⚠️ This may cause getUserIdentity() to return null. Please add 'aud': 'convex' to your Clerk JWT template.");
-    } else {
-      console.log("✅ JWT token has 'aud': 'convex' claim - this is correct!");
-    }
-    
-    return payload.sub || null;
-  } catch (error) {
-    console.error('Error decoding JWT:', error);
-    return null;
-  }
-}
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('main')
@@ -50,7 +25,7 @@ export default function App() {
   const { isLoading: convexAuthLoading, isAuthenticated } = useConvexAuth()
   
   // Still need Clerk's useAuth to get user object for creating users
-  const { user: clerkUser, getToken } = useAuth()
+  const { user: clerkUser } = useAuth()
   const clerk = useClerk()
   
   // Get Clerk user ID directly from clerkUser object (fallback when getUserIdentity() returns null)
@@ -58,20 +33,10 @@ export default function App() {
     if (clerkUser) {
       // Use clerkUser.id directly as fallback
       setClerkUserId(clerkUser.id);
-      console.log("Using Clerk user ID from clerkUser object:", clerkUser.id);
-      
-      // Also decode token to check if it has aud: "convex" claim
-      if (getToken) {
-        getToken({ template: "convex" }).catch(() => getToken()).then((token) => {
-          if (token) {
-            decodeJWT(token); // This will log the payload for debugging
-          }
-        });
-      }
     } else {
       setClerkUserId(null);
     }
-  }, [clerkUser, getToken]);
+  }, [clerkUser]);
   
   // Only run query when authenticated
   // Convex's <Authenticated> ensures the token is validated, so we can use the query directly
@@ -107,40 +72,23 @@ export default function App() {
   // Don't wait for clerkUserId - query can get it from backend
   const isLoading = convexAuthLoading || (isAuthenticated && currentUser === undefined)
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log("App state:", {
-      convexAuthLoading,
-      isAuthenticated,
-      hasClerkUser: !!clerkUser,
-      clerkUserId,
-      currentUser: currentUser === undefined ? "loading" : currentUser === null ? "null (no user)" : "found",
-      isLoading
-    })
-  }, [convexAuthLoading, isAuthenticated, clerkUser, clerkUserId, currentUser, isLoading])
-
   // If user is authenticated but doesn't exist in Convex, try to create them
   React.useEffect(() => {
     // Wait a bit for query to complete, then check if user needs to be created
     if (isAuthenticated && clerkUser && !convexAuthLoading && !userCreationAttempted) {
       // If query returned null (user doesn't exist) or has been loading for too long
       if (currentUser === null || (currentUser === undefined && clerkUserId)) {
-        console.log("User authenticated but not found in Convex, attempting to create...", {
-          clerkUserId: clerkUser.id,
-          currentUser: currentUser === null ? "null" : "undefined"
-        })
         setUserCreationAttempted(true)
         
         // Add a small delay to ensure everything is ready
         const timeoutId = setTimeout(async () => {
           try {
-            const userId = await createUser({
+            await createUser({
               name: clerkUser.fullName || clerkUser.firstName || clerkUser.emailAddresses[0]?.emailAddress || "Bruker",
               email: clerkUser.emailAddresses[0]?.emailAddress || "",
               grade: "",
               clerkUserId: clerkUserId || clerkUser.id || undefined, // Pass user ID as fallback
             })
-            console.log("User created successfully:", userId)
           } catch (error: any) {
             console.error("Error creating user:", error)
             // User might already exist or be created by webhook, that's okay
@@ -200,12 +148,20 @@ export default function App() {
             </div>
           </div>
         ) : currentUser ? (
-          <AppContent 
-            currentPage={currentPage} 
-            setCurrentPage={setCurrentPage}
-            currentUser={currentUser}
-            redeemCouponMutation={redeemCouponMutation}
-          />
+          (currentUser.role === "teacher") ? (
+            <TeacherAppContent 
+              currentPage={currentPage} 
+              setCurrentPage={setCurrentPage}
+              teacher={currentUser}
+            />
+          ) : (
+            <AppContent 
+              currentPage={currentPage} 
+              setCurrentPage={setCurrentPage}
+              currentUser={currentUser}
+              redeemCouponMutation={redeemCouponMutation}
+            />
+          )
         ) : (
           <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-4">
             <div className="text-center max-w-md">
@@ -273,6 +229,7 @@ function AppContent({
           <ProfilePage
             currentPoints={currentUser.currentPoints}
             totalEarned={currentUser.totalEarned}
+            onNavigateToJourneyMap={() => setCurrentPage('journey-map')}
           />
         )
       case 'journey-map':
@@ -322,13 +279,7 @@ function AppContent({
       ) : (
         <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
           <div className="absolute top-4 right-4 z-50 flex gap-2">
-            <Button
-              onClick={() => setCurrentPage('journey-map')}
-              variant="outline"
-              size="icon"
-            >
-              <Map className="size-4" />
-            </Button>
+            {currentUser && <RoleToggle currentUser={currentUser} />}
             <UserButton afterSignOutUrl="/" />
           </div>
           {renderCurrentPage()}
@@ -336,5 +287,98 @@ function AppContent({
         </div>
       )}
     </div>
+  )
+}
+
+// Teacher App Content with navigation
+function TeacherAppContent({
+  currentPage,
+  setCurrentPage,
+  teacher,
+}: {
+  currentPage: string
+  setCurrentPage: (page: string) => void
+  teacher: any
+}) {
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case 'main':
+        return <TeacherDashboard teacher={teacher} />
+      case 'schedule':
+        return <TeacherSchedulePage />
+      case 'profile':
+        return <TeacherProfilePage />
+      default:
+        return <TeacherDashboard teacher={teacher} />
+    }
+  }
+
+  return (
+    <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
+      <div className="absolute top-4 right-4 z-50 flex gap-2">
+        <RoleToggle currentUser={teacher} />
+        <UserButton afterSignOutUrl="/" />
+      </div>
+      {renderCurrentPage()}
+      <BottomNav currentPage={currentPage} onPageChange={setCurrentPage} />
+    </div>
+  )
+}
+
+// Role Toggle Component
+function RoleToggle({ currentUser }: { currentUser: any }) {
+  const updateUserRole = useMutation(api.users.updateUserRole)
+
+  const handleToggle = async () => {
+    if (!currentUser) {
+      console.log('No currentUser in toggle')
+      return
+    }
+    
+    const currentRole = currentUser.role || "student"
+    const newRole = currentRole === "teacher" ? "student" : "teacher"
+    
+    console.log('Toggling role from', currentRole, 'to', newRole)
+    
+    try {
+      const result = await updateUserRole({ role: newRole })
+      console.log('Role update result:', result)
+      toast.success(`Byttet til ${newRole === "teacher" ? "lærer" : "elev"}-versjon`)
+      // Force reload to update UI after a short delay
+      setTimeout(() => {
+        window.location.reload()
+      }, 1000)
+    } catch (error: any) {
+      console.error('Error updating role:', error)
+      toast.error(error.message || 'Kunne ikke bytte rolle')
+    }
+  }
+
+  const isTeacher = currentUser?.role === "teacher"
+
+  return (
+    <Button
+      onClick={handleToggle}
+      variant="outline"
+      size="sm"
+      className="flex items-center gap-2"
+      style={{ 
+        borderColor: isTeacher ? '#E8A5FF' : '#00A7B3',
+        color: isTeacher ? '#E8A5FF' : '#00A7B3'
+      }}
+      title={`Bytt til ${isTeacher ? "elev" : "lærer"}-versjon`}
+    >
+      {isTeacher ? (
+        <>
+          <GraduationCap className="size-4" />
+          <span className="hidden sm:inline">Lærer</span>
+        </>
+      ) : (
+        <>
+          <User className="size-4" />
+          <span className="hidden sm:inline">Elev</span>
+        </>
+      )}
+    </Button>
   )
 }

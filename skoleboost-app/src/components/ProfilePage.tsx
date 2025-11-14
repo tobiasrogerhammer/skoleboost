@@ -1,9 +1,10 @@
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { User, Award, TrendingUp, Calendar, Target, Star, Coins } from 'lucide-react'
+import { User, Award, TrendingUp, Calendar, Target, Star, Coins, Map } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
+import { Button } from './ui/button'
 import { EventParticipation } from './EventParticipation'
 
 interface Achievement {
@@ -18,6 +19,7 @@ interface Achievement {
 interface ProfilePageProps {
   currentPoints: number
   totalEarned: number
+  onNavigateToJourneyMap?: () => void
 }
 
 const mockAchievements: Achievement[] = [
@@ -78,7 +80,7 @@ const getStudentInfo = (user: any) => ({
   totalStudents: user?.totalStudents || 250
 })
 
-export function ProfilePage({ currentPoints, totalEarned }: ProfilePageProps) {
+export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap }: ProfilePageProps) {
   const currentUser = useQuery(api.users.getCurrentUser)
   const achievements = useQuery(api.users.getAchievements) || mockAchievements
   const earnedAchievements = achievements.filter((achievement: any) => achievement.earned)
@@ -244,6 +246,34 @@ export function ProfilePage({ currentPoints, totalEarned }: ProfilePageProps) {
           ))}
         </div>
       </Card>
+
+      {/* User Journey Map Button */}
+      {onNavigateToJourneyMap && (
+        <Card className="p-5 border-2 cursor-pointer hover:shadow-xl transition-all duration-300" 
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.1), rgba(232, 246, 246, 0.5))', 
+            borderColor: 'rgba(0, 167, 179, 0.3)', 
+            borderRadius: '20px' 
+          }}
+          onClick={onNavigateToJourneyMap}
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center" 
+              style={{ background: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }}>
+              <Map className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-lg mb-1" style={{ color: '#006C75' }}>User Journey Map</h3>
+              <p className="text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                Se din reise gjennom appen
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" style={{ color: '#00A7B3' }}>
+              →
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Event Participation */}
       <EventParticipation />

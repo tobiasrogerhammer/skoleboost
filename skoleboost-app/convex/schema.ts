@@ -13,6 +13,7 @@ export default defineSchema({
     attendanceRate: v.number(),
     rank: v.number(),
     totalStudents: v.number(),
+    role: v.optional(v.union(v.literal("student"), v.literal("teacher"))),
   }),
 
   coupons: defineTable({
@@ -75,5 +76,35 @@ export default defineSchema({
     progress: v.optional(v.number()),
     earnedAt: v.optional(v.number()),
   }).index("by_user", ["userId"]),
+
+  announcements: defineTable({
+    title: v.string(),
+    content: v.string(),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+    imageUrl: v.optional(v.string()),
+  }).index("by_created", ["createdAt"]),
+
+  classes: defineTable({
+    name: v.string(),
+    grade: v.string(),
+    teacherId: v.id("users"),
+    subject: v.optional(v.string()),
+  }).index("by_teacher", ["teacherId"]),
+
+  studentsInClasses: defineTable({
+    studentId: v.id("users"),
+    classId: v.id("classes"),
+  }).index("by_student", ["studentId"]).index("by_class", ["classId"]),
+
+  attendance: defineTable({
+    studentId: v.id("users"),
+    classId: v.id("classes"),
+    scheduleItemId: v.optional(v.id("scheduleItems")),
+    date: v.string(),
+    status: v.union(v.literal("present"), v.literal("late"), v.literal("absent")),
+    markedBy: v.id("users"),
+    markedAt: v.number(),
+  }).index("by_student", ["studentId"]).index("by_class", ["classId"]).index("by_date", ["date"]),
 });
 

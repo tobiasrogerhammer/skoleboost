@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import { Clock, MapPin, Coins, CheckCircle, XCircle, Camera, Palette, Music, TreePine, Gamepad2, Users, UserPlus, UserCheck, MessageCircle, Image, Heart } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Button } from './ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Textarea } from './ui/textarea'
 import { Avatar } from './ui/avatar'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
 
 interface Comment {
@@ -351,22 +352,72 @@ export function SchedulePage() {
   const scheduleData = useQuery(api.schedule.getByUser) || []
   const markAttendedMutation = useMutation(api.schedule.markAttended)
   const registerEventMutation = useMutation(api.events.register)
+  const setupScheduleMutation = useMutation(api.schedule.setupDefaultSchedule)
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null)
   const [newComment, setNewComment] = useState('')
   const [timeRemaining, setTimeRemaining] = useState<{ hours: number; minutes: number; seconds: number } | null>(null)
+  const [isSettingUp, setIsSettingUp] = useState(false)
   
-  const todayItems = scheduleData.filter((item: any) => item.day === 'I dag')
-  const tomorrowItems = scheduleData.filter((item: any) => item.day === 'I morgen')
-  const upcomingEvents = scheduleData.filter((item: any) => ['Fredag', 'Lørdag'].includes(item.day))
-  const attendedToday = todayItems.filter(item => item.attended).length
-  const totalPointsToday = todayItems.filter(item => item.attended && item.type === 'class').reduce((sum, item) => sum + item.points, 0)
+  // Get current day name
+  const getDayName = useCallback(() => {
+    const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
+    return days[new Date().getDay()]
+  }, [])
+  const currentDayName = getDayName()
+  
+  // State for selected day
+  const [selectedDay, setSelectedDay] = useState<string>(() => {
+    const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
+    return days[new Date().getDay()]
+  })
+  
+  // Filter schedule items by selected day
+  const selectedDayItems = useMemo(() => {
+    const items = scheduleData.filter((item: any) => item.day === selectedDay)
+    // Sort by time (extract start time from "HH:MM - HH:MM" format)
+    return items.sort((a: any, b: any) => {
+      const timeA = a.time.match(/(\d{2}):(\d{2})/)?.[0] || '00:00'
+      const timeB = b.time.match(/(\d{2}):(\d{2})/)?.[0] || '00:00'
+      return timeA.localeCompare(timeB)
+    })
+  }, [scheduleData, selectedDay])
+  
+  const todayItems = useMemo(() => scheduleData.filter((item: any) => item.day === currentDayName), [scheduleData, currentDayName])
+  const tomorrowItems = useMemo(() => {
+    const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
+    const tomorrowIndex = (new Date().getDay() + 1) % 7
+    const tomorrowName = days[tomorrowIndex]
+    return scheduleData.filter((item: any) => item.day === tomorrowName)
+  }, [scheduleData])
+  const upcomingEvents = useMemo(() => scheduleData.filter((item: any) => ['Fredag', 'Lørdag'].includes(item.day)), [scheduleData])
+  
+  // Auto-setup schedule if empty
+  React.useEffect(() => {
+    if (scheduleData !== undefined && scheduleData.length === 0 && !isSettingUp) {
+      setIsSettingUp(true)
+      setupScheduleMutation()
+        .then(() => {
+          toast.success('Timeplan opprettet! 📚')
+        })
+        .catch((error: any) => {
+          console.error('Error setting up schedule:', error)
+          toast.error('Kunne ikke opprette timeplan')
+          setIsSettingUp(false)
+        })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleData?.length, isSettingUp])
+  const attendedSelectedDay = selectedDayItems.filter(item => item.attended).length
+  const totalPointsSelectedDay = selectedDayItems.filter(item => item.attended && item.type === 'class').reduce((sum, item) => sum + item.points, 0)
 
-  // Find first upcoming class that hasn't started
+  // Find first upcoming class that hasn't started (only for today)
   const getFirstUpcomingClass = useCallback(() => {
+    if (selectedDay !== currentDayName) return null
+    
     const now = new Date()
     const currentTime = now.getHours() * 60 + now.getMinutes() // minutes since midnight
     
-    for (const item of todayItems) {
+    for (const item of selectedDayItems) {
       if (item.type === 'class' && !item.attended) {
         const timeMatch = item.time.match(/(\d{2}):(\d{2})/)
         if (timeMatch) {
@@ -381,7 +432,7 @@ export function SchedulePage() {
       }
     }
     return null
-  }, [todayItems])
+  }, [selectedDayItems, selectedDay, currentDayName])
 
   // Calculate countdown
   useEffect(() => {
@@ -414,7 +465,7 @@ export function SchedulePage() {
     const interval = setInterval(updateCountdown, 1000)
     
     return () => clearInterval(interval)
-  }, [scheduleData, getFirstUpcomingClass])
+  }, [getFirstUpcomingClass])
 
   const handleRSVP = async (eventId: string) => {
     try {
@@ -486,12 +537,22 @@ export function SchedulePage() {
       }
     }
 
-  // Get current day name
-  const getDayName = () => {
-    const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
-    return days[new Date().getDay()]
+  const daysOfWeek = ['Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag', 'Søndag']
+
+  // Show loading state while setting up schedule
+  if (scheduleData === undefined || (scheduleData.length === 0 && isSettingUp)) {
+    return (
+      <div className="pb-20 px-4 pt-6 max-w-md mx-auto space-y-6">
+        <div className="text-center mb-8">
+          <div className="inline-block mb-3 p-3 rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.1), rgba(232, 246, 246, 0.5))' }}>
+            <span className="text-4xl">📚</span>
+          </div>
+          <h1 className="mb-2 font-bold text-3xl" style={{ color: '#006C75' }}>Din Timeplan</h1>
+          <p className="text-base font-semibold mb-1" style={{ color: 'rgba(0, 108, 117, 0.9)' }}>Setter opp timeplan...</p>
+        </div>
+      </div>
+    )
   }
-  const dayName = getDayName()
 
   return (
     <div className="pb-20 px-4 pt-6 max-w-md mx-auto space-y-6">
@@ -501,33 +562,74 @@ export function SchedulePage() {
           <span className="text-4xl">📚</span>
         </div>
         <h1 className="mb-2 font-bold text-3xl" style={{ color: '#006C75' }}>Din Timeplan</h1>
-        <p className="text-base font-semibold mb-1" style={{ color: 'rgba(0, 108, 117, 0.9)' }}>{dayName}s Timer & Arrangementer</p>
-        <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Følg oppmøte og tjen poeng! 💪</p>
+        <p className="text-base font-semibold mb-1" style={{ color: 'rgba(0, 108, 117, 0.9)' }}>Følg oppmøte og tjen poeng! 💪</p>
       </div>
 
-      {/* Enhanced Today's Stats */}
+      {/* Day Selector */}
+      <Card className="p-4 border-2" style={{ borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '16px' }}>
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-semibold" style={{ color: '#006C75' }}>Velg dag:</label>
+          <Select value={selectedDay} onValueChange={setSelectedDay}>
+            <SelectTrigger className="flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {daysOfWeek.map((day) => (
+                <SelectItem key={day} value={day}>
+                  {day}
+                  {day === currentDayName && ' (I dag)'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {scheduleData.length === 0 && (
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(0, 167, 179, 0.2)' }}>
+            <Button
+              onClick={async () => {
+                setIsSettingUp(true)
+                try {
+                  await setupScheduleMutation()
+                  toast.success('Timeplan opprettet! 📚')
+                } catch (error: any) {
+                  console.error('Error setting up schedule:', error)
+                  toast.error('Kunne ikke opprette timeplan')
+                  setIsSettingUp(false)
+                }
+              }}
+              disabled={isSettingUp}
+              className="w-full"
+              style={{ backgroundColor: '#00A7B3', color: 'white' }}
+            >
+              {isSettingUp ? 'Oppretter timeplan...' : 'Sett opp timeplan'}
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      {/* Enhanced Selected Day's Stats */}
       <Card className="p-5 border-2 shadow-2xl" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '20px', boxShadow: '0 10px 40px rgba(0, 167, 179, 0.3)' }}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-white font-extrabold text-xl drop-shadow-lg">Dagens Fremgang</h3>
+          <h3 className="text-white font-extrabold text-xl drop-shadow-lg">{selectedDay}s Fremgang</h3>
           <div className="bg-white/30 p-2 rounded-xl backdrop-blur-md">
             <CheckCircle className="w-5 h-5 text-white" />
           </div>
           </div>
         <div className="grid grid-cols-3 gap-3 text-center">
           <div className="bg-white/30 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-            <div className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">{attendedToday}</div>
+            <div className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">{attendedSelectedDay}</div>
             <div className="text-xs text-white font-semibold uppercase tracking-wide">Deltatt</div>
             <div className="text-xs text-white/80 mt-1">✅ Fullført</div>
             </div>
           <div className="bg-white/30 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-            <div className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">{todayItems.length - attendedToday}</div>
+            <div className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">{selectedDayItems.length - attendedSelectedDay}</div>
             <div className="text-xs text-white font-semibold uppercase tracking-wide">Gjenstår</div>
             <div className="text-xs text-white/80 mt-1">⏳ Igjen</div>
           </div>
           <div className="bg-white/30 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
             <div className="flex items-center justify-center mb-1">
               <Coins className="w-6 h-6 text-white mr-1 drop-shadow-lg" />
-              <span className="text-3xl font-extrabold text-white drop-shadow-lg">{totalPointsToday}</span>
+              <span className="text-3xl font-extrabold text-white drop-shadow-lg">{totalPointsSelectedDay}</span>
             </div>
             <div className="text-xs text-white font-semibold uppercase tracking-wide">Poeng</div>
             <div className="text-xs text-white/80 mt-1">💰 Tjent</div>
@@ -535,15 +637,21 @@ export function SchedulePage() {
         </div>
       </Card>
 
-      {/* Enhanced Today's Schedule */}
+      {/* Enhanced Selected Day's Schedule */}
       <div>
         <div className="flex items-center gap-3 mb-4">
           <div className="h-1 w-12 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, #00C4D4)' }}></div>
-          <h2 className="font-extrabold text-2xl" style={{ color: '#006C75' }}>Dagens Timeplan</h2>
+          <h2 className="font-extrabold text-2xl" style={{ color: '#006C75' }}>{selectedDay}s Timeplan</h2>
           <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, transparent)' }}></div>
         </div>
-        <div className="space-y-3">
-          {todayItems.map((item: any, index: number) => {
+        {selectedDayItems.length === 0 ? (
+          <Card className="p-8 text-center border-2" style={{ borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '16px' }}>
+            <p className="text-lg font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen timer på {selectedDay}</p>
+            <p className="text-sm mt-2" style={{ color: 'rgba(0, 108, 117, 0.5)' }}>Nyt fridagen! 🎉</p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {selectedDayItems.map((item: any, index: number) => {
             const upcoming = getFirstUpcomingClass()
             const isFirstUpcoming = upcoming && upcoming.item._id === item._id && item.type === 'class' && !item.attended
             const IconComponent = getItemIcon(item)
@@ -656,11 +764,12 @@ export function SchedulePage() {
               </Card>
             )
           })}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Enhanced Tomorrow's Schedule Preview */}
-      {tomorrowItems.length > 0 && (
+      {selectedDay === currentDayName && tomorrowItems.length > 0 && (
       <div>
         <div className="flex items-center gap-3 mb-5">
           <div className="h-1 w-12 rounded-full" style={{ background: 'linear-gradient(90deg, #FBBE9E, #FF9F66)' }}></div>
@@ -756,9 +865,9 @@ export function SchedulePage() {
                         <span className="text-2xl">{event.emoji}</span>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-white font-bold drop-shadow-md mb-1">{event.subject}</h4>
-                        <div className="flex items-center gap-2 text-xs text-white/90">
-                          <Badge className="text-xs text-white backdrop-blur-sm font-semibold" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)', borderColor: 'rgba(255, 255, 255, 0.4)' }}>
+                        <h4 className="font-bold mb-1" style={{ color: '#006C75' }}>{event.subject}</h4>
+                        <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>
+                          <Badge className="text-xs backdrop-blur-sm font-semibold" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)', borderColor: 'rgba(0, 167, 179, 0.3)', color: '#006C75' }}>
                           {event.day}
                         </Badge>
                           <span>•</span>
@@ -772,7 +881,8 @@ export function SchedulePage() {
                                 size="sm" 
                                 variant="ghost" 
                                 onClick={() => setSelectedEvent(event)}
-                          className="text-white hover:bg-white/20"
+                          style={{ color: '#00A7B3' }}
+                          className="hover:bg-[rgba(0,167,179,0.1)]"
                               >
                           <MessageCircle className="w-4 h-4 mr-1" />
                           Se Detaljer

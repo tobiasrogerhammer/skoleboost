@@ -14,11 +14,8 @@ export const getCurrentUser = query({
     }
     
     if (!clerkUserId) {
-      console.log("getCurrentUser: No clerkUserId found");
       return null;
     }
-
-    console.log("getCurrentUser: Looking for user with studentId:", clerkUserId);
 
     // Find user by Clerk user ID (stored in studentId)
     const user = await ctx.db
@@ -26,71 +23,105 @@ export const getCurrentUser = query({
       .filter((q) => q.eq(q.field("studentId"), clerkUserId))
       .first();
 
-    if (user) {
-      console.log("getCurrentUser: User found:", user._id);
-    } else {
-      console.log("getCurrentUser: User not found with studentId:", clerkUserId);
-      // Debug: List all users to see what studentIds exist
-      const allUsers = await ctx.db.query("users").collect();
-      console.log("getCurrentUser: All users in database:", allUsers.map(u => ({ id: u._id, studentId: u.studentId })));
-    }
-
     return user;
   },
 });
 
 export const createUser = mutation({
+      args: {
+        name: v.string(),
+        email: v.string(),
+        grade: v.string(),
+        role: v.optional(v.union(v.literal("student"), v.literal("teacher"))),
+        clerkUserId: v.optional(v.string()),
+      },
+      handler: async (ctx, args) => {
+        // Try to get user ID from args first (fallback from frontend)
+        let clerkUserId = args.clerkUserId;
+        
+        // If not provided, try to get from auth context
+        if (!clerkUserId) {
+          clerkUserId = await getClerkUserId(ctx);
+        }
+        
+        if (!clerkUserId) {
+          throw new Error("Not authenticated");
+        }
+
+        const existingUser = await ctx.db
+          .query("users")
+          .filter((q) => q.eq(q.field("studentId"), clerkUserId))
+          .first();
+
+        const role = args.role || "student";
+
+        if (existingUser) {
+          // Update existing user
+          const updates: any = {
+            name: args.name,
+            email: args.email,
+            grade: args.grade,
+          };
+          // Only update role if it's not already set or if explicitly provided
+          if (!existingUser.role || args.role) {
+            updates.role = role;
+          }
+          await ctx.db.patch(existingUser._id, updates);
+          return existingUser._id;
+        }
+
+        const totalStudents = await ctx.db.query("users").filter((q) => {
+          const role = q.field("role");
+          return q.or(
+            q.eq(role, "student"),
+            q.eq(role, undefined)
+          );
+        }).collect();
+        const rank = totalStudents.length + 1;
+
+        const userId = await ctx.db.insert("users", {
+          name: args.name,
+          email: args.email,
+          grade: args.grade,
+          studentId: clerkUserId, // Store Clerk user ID in studentId field for authentication (set automatically)
+          joinDate: new Date().toLocaleDateString("nb-NO", { month: "long", year: "numeric" }),
+          currentPoints: role === "student" ? 150 : 0,
+          totalEarned: 0,
+          attendanceRate: 0,
+          rank: role === "student" ? rank : 0,
+          totalStudents: rank,
+          role,
+        });
+
+        return userId;
+      },
+    });
+
+// Update user role
+export const updateUserRole = mutation({
   args: {
-    name: v.string(),
-    email: v.string(),
-    grade: v.string(),
-    clerkUserId: v.optional(v.string()),
+    role: v.union(v.literal("student"), v.literal("teacher")),
   },
   handler: async (ctx, args) => {
-    // Try to get user ID from args first (fallback from frontend)
-    let clerkUserId = args.clerkUserId;
-    
-    // If not provided, try to get from auth context
-    if (!clerkUserId) {
-      clerkUserId = await getClerkUserId(ctx);
-    }
-    
+    const clerkUserId = await getClerkUserId(ctx);
     if (!clerkUserId) {
       throw new Error("Not authenticated");
     }
 
-    const existingUser = await ctx.db
+    const user = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("studentId"), clerkUserId))
       .first();
 
-    if (existingUser) {
-      // Update existing user
-      await ctx.db.patch(existingUser._id, {
-        name: args.name,
-        email: args.email,
-        grade: args.grade,
-      });
-      return existingUser._id;
+    if (!user) {
+      throw new Error("User not found");
     }
 
-    const totalStudents = await ctx.db.query("users").collect();
-    const rank = totalStudents.length + 1;
-
-    const userId = await ctx.db.insert("users", {
-      name: args.name,
-      email: args.email,
-      grade: args.grade,
-      studentId: clerkUserId, // Store Clerk user ID in studentId field for authentication (set automatically)
-      joinDate: new Date().toLocaleDateString("nb-NO", { month: "long", year: "numeric" }),
-      currentPoints: 150,
-      totalEarned: 0,
-      attendanceRate: 0,
-      rank,
-      totalStudents: rank,
+    await ctx.db.patch(user._id, {
+      role: args.role,
     });
 
-    return userId;
+    return { success: true, role: args.role };
   },
 });
 
@@ -115,7 +146,7 @@ export const updatePoints = mutation({
 
     await ctx.db.patch(user._id, {
       currentPoints: user.currentPoints + args.points,
-      totalEarned: user.totalEarned + Math.max(0, args.points),
+      totalEarned: user.totalEarned + args.points,
     });
   },
 });
@@ -191,4 +222,3 @@ export const redeemCoupon = mutation({
     });
   },
 });
-
