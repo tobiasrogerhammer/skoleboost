@@ -1,3 +1,5 @@
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { User, Award, TrendingUp, Calendar, Target, Star, Coins } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
@@ -66,18 +68,21 @@ const mockAchievements: Achievement[] = [
   }
 ]
 
-const studentInfo = {
-  name: 'Alex Johnson',
-  grade: '10th Grade',
-  studentId: 'ST2024001',
-  joinDate: 'September 2024',
-  attendanceRate: 85,
-  rank: 12,
-  totalStudents: 250
-}
+const getStudentInfo = (user: any) => ({
+  name: user?.name || 'Alex Johnson',
+  grade: user?.grade || '10th Grade',
+  studentId: user?.studentId || 'ST2024001',
+  joinDate: user?.joinDate || 'September 2024',
+  attendanceRate: user?.attendanceRate || 85,
+  rank: user?.rank || 12,
+  totalStudents: user?.totalStudents || 250
+})
 
 export function ProfilePage({ currentPoints, totalEarned }: ProfilePageProps) {
-  const earnedAchievements = mockAchievements.filter(achievement => achievement.earned)
+  const currentUser = useQuery(api.users.getCurrentUser)
+  const achievements = useQuery(api.users.getAchievements) || mockAchievements
+  const earnedAchievements = achievements.filter((achievement: any) => achievement.earned)
+  const studentInfo = getStudentInfo(currentUser)
   
   return (
     <div className="pb-20 px-4 pt-6 max-w-md mx-auto space-y-6">

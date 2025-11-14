@@ -1,0 +1,39 @@
+{
+  "users": {
+    "name": "string",
+    "email": "string",
+    "grade": "string",
+    "studentId": "string",
+    "joinDate": "string",
+    "currentPoints": "number",
+    "totalEarned": "number",
+    "attendanceRate": "number",
+    "rank": "number",
+    "totalStudents": "number"
+  },
+  "example": {
+    "name": "Ola Nordmann",
+    "email": "ola.nordmann@skole.no",
+    "grade": "10. klasse",
+    "studentId": "user_2abc123def456",
+    "joinDate": "januar 2025",
+    "currentPoints": 150,
+    "totalEarned": 0,
+    "attendanceRate": 0,
+    "rank": 1,
+    "totalStudents": 1
+  },
+  "fieldDescriptions": {
+    "name": "Brukerens fulle navn",
+    "email": "Brukerens e-postadresse",
+    "grade": "Brukerens klasse (f.eks. '10. klasse')",
+    "studentId": "Clerk user ID (settes automatisk ved opprettelse)",
+    "joinDate": "Dato for når brukeren registrerte seg (format: 'måned år', f.eks. 'januar 2025')",
+    "currentPoints": "Brukerens nåværende poengsaldo",
+    "totalEarned": "Totalt antall poeng brukeren har tjent (aldri reduseres)",
+    "attendanceRate": "Oppmøteprosent (0-100)",
+    "rank": "Brukerens rangering blant alle studenter",
+    "totalStudents": "Totalt antall studenter i systemet"
+  }
+}
+

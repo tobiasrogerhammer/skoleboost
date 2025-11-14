@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { Coins, ShoppingBag, Star, TrendingUp, Calendar, Users, UserPlus, ChevronRight } from 'lucide-react'
 import { Card } from './ui/card'
 import { Button } from './ui/button'
@@ -134,6 +136,8 @@ const mockSocialEvents: SocialEvent[] = [
 ]
 
 export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPageProps) {
+  const coupons = useQuery(api.coupons.getAll) || []
+  const socialEvents = useQuery(api.events.getAll) || []
   const todayPoints = 15 // Mock today's earned points
   const attendanceRate = 80
   const classesAttended = 12
@@ -171,9 +175,9 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
       </div>
 
       {/* Enhanced Points Summary */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <Card 
-          className="px-4 py-1 text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-center" 
+          className="px-4 py-1 text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-center gap-2" 
           style={{ 
             background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', 
             border: '3px solid rgba(255, 255, 255, 0.3)',
@@ -188,7 +192,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
         </Card>
 
         <Card 
-          className="px-4 py-1 text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-center" 
+          className="px-4 py-1 text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-center gap-2" 
           style={{ 
             background: 'linear-gradient(135deg, #FBBE9E 0%, #FF9F66 50%, #FFB84D 100%)', 
             border: '3px solid rgba(255, 255, 255, 0.3)',
@@ -240,7 +244,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
       </Card>
 
       {/* Social Events Preview Card */}
-      {mockSocialEvents.length > 0 && (
+      {socialEvents.length > 0 && (
         <Card 
           className="p-3 border-2 active:scale-[0.98] transition-all duration-200 cursor-pointer" 
           style={{ 
@@ -258,43 +262,43 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-sm mb-0.5" style={{ color: '#006C75' }}>Kommende Arrangementer</h3>
                 <p className="text-xs font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                  {mockSocialEvents.length} {mockSocialEvents.length !== 1 ? 'arrangement' : 'arrangement'} kommer
+                  {socialEvents.length} {socialEvents.length !== 1 ? 'arrangement' : 'arrangement'} kommer
                 </p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4" style={{ color: 'rgba(0, 108, 117, 0.6)' }} />
         </div>
 
-          {/* Preview of first three events */}
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {mockSocialEvents.slice(0, 3).map((event, index) => {
+            {/* Preview of first three events */}
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {socialEvents.slice(0, 3).map((event: any, index: number) => {
               const eventStyle = getEventStyles(event.colorTheme)
-              return (
-                <div
-                  key={event.id}
-                  className="p-1.5 rounded-lg border flex flex-col items-center text-center"
-                  style={{
-                    background: eventStyle.bg,
-                    borderColor: eventStyle.border,
-                    minHeight: '70px'
-                  }}
-                >
-                  <span className="text-lg mb-0.5">{event.emoji}</span>
-                  <h4 
-                    className="font-bold text-xs mb-0.5 text-white drop-shadow-sm" 
-                    style={{ 
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                      lineHeight: '1.2'
+                return (
+                  <div
+                    key={event._id}
+                    className="p-1.5 rounded-lg border flex flex-col items-center text-center"
+                    style={{
+                      background: eventStyle.bg,
+                      borderColor: eventStyle.border,
+                      minHeight: '70px'
                     }}
                   >
-                    {event.title}
-                  </h4>
-                  <p className="text-xs font-medium text-white/90 drop-shadow-sm">{event.date}</p>
-                </div>
-              )
+                    <span className="text-lg mb-0.5">{event.emoji}</span>
+                    <h4 
+                      className="font-bold text-xs mb-0.5 text-white drop-shadow-sm" 
+                      style={{ 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        lineHeight: '1.2'
+                      }}
+                    >
+                      {event.title}
+                    </h4>
+                    <p className="text-xs font-medium text-white/90 drop-shadow-sm">{event.date}</p>
+                  </div>
+                )
             })}
           </div>
         </Card>
@@ -307,7 +311,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
             <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Sosiale Arrangementer & Utflukter 🎉</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-4">
-            {mockSocialEvents.map((event) => {
+            {socialEvents.map((event: any) => {
               const eventStyle = getEventStyles(event.colorTheme)
               const isFull = event.registered >= event.capacity
               const spotsLeft = event.capacity - event.registered
@@ -315,7 +319,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
 
               return (
                 <Card 
-                  key={event.id} 
+                  key={event._id} 
                   className="p-4 border-2" 
                   style={{ 
                     background: eventStyle.bg, 
@@ -407,7 +411,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
         </div>
 
         <div className="grid grid-cols-1 gap-3">
-          {mockCoupons.map((coupon, index) => {
+          {coupons.map((coupon: any, index: number) => {
             const getCategoryColor = (category: string) => {
               switch (category) {
                 case 'Mat':
@@ -435,7 +439,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
 
             return (
             <Card 
-              key={coupon.id} 
+              key={coupon._id} 
               className="p-4 border-2 active:scale-[0.98] transition-all duration-200" 
               style={{ 
                 background: gradient.bg, 
@@ -490,7 +494,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
               <Button
                 variant={canAfford ? "default" : "outline"}
                 disabled={!canAfford}
-                onClick={() => onRedeemCoupon(coupon.id, coupon.cost)}
+                onClick={() => onRedeemCoupon(coupon._id, coupon.cost)}
                 className={`w-full font-bold py-3 text-base transition-all duration-200 ${
                   canAfford ? 'active:scale-[0.98]' : ''
                 }`}

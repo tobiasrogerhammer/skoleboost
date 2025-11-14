@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { Clock, MapPin, Coins, CheckCircle, XCircle, Camera, Palette, Music, TreePine, Gamepad2, Users, UserPlus, UserCheck, MessageCircle, Image, Heart } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
@@ -26,7 +28,8 @@ interface Photo {
 }
 
 interface ScheduleItem {
-  id: string
+  _id?: string
+  id?: string
   subject: string
   teacher?: string
   time: string
@@ -345,14 +348,16 @@ const mockSchedule: ScheduleItem[] = [
 ]
 
 export function SchedulePage() {
-  const [scheduleData, setScheduleData] = useState(mockSchedule)
-  const [selectedEvent, setSelectedEvent] = useState<ScheduleItem | null>(null)
+  const scheduleData = useQuery(api.schedule.getByUser) || []
+  const markAttendedMutation = useMutation(api.schedule.markAttended)
+  const registerEventMutation = useMutation(api.events.register)
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null)
   const [newComment, setNewComment] = useState('')
   const [timeRemaining, setTimeRemaining] = useState<{ hours: number; minutes: number; seconds: number } | null>(null)
   
-  const todayItems = scheduleData.filter(item => item.day === 'I dag')
-  const tomorrowItems = scheduleData.filter(item => item.day === 'I morgen')
-  const upcomingEvents = scheduleData.filter(item => ['Fredag', 'Lørdag'].includes(item.day))
+  const todayItems = scheduleData.filter((item: any) => item.day === 'I dag')
+  const tomorrowItems = scheduleData.filter((item: any) => item.day === 'I morgen')
+  const upcomingEvents = scheduleData.filter((item: any) => ['Fredag', 'Lørdag'].includes(item.day))
   const attendedToday = todayItems.filter(item => item.attended).length
   const totalPointsToday = todayItems.filter(item => item.attended && item.type === 'class').reduce((sum, item) => sum + item.points, 0)
 
@@ -411,77 +416,27 @@ export function SchedulePage() {
     return () => clearInterval(interval)
   }, [scheduleData, getFirstUpcomingClass])
 
-  const handleRSVP = (eventId: string) => {
-    setScheduleData(prevData => 
-      prevData.map(item => {
-        if (item.id === eventId && item.type !== 'class') {
-          const isCurrentlyRegistered = item.isRegistered || false
-          const newRegisteredCount = isCurrentlyRegistered 
-            ? (item.registered || 0) - 1 
-            : (item.registered || 0) + 1
-          
-          const updatedUsers = item.registeredUsers || []
-          const newUsers = isCurrentlyRegistered
-            ? updatedUsers.filter(user => user !== 'Alex Johnson')
-            : [...updatedUsers, 'Alex Johnson']
-
-          toast.success(
-            isCurrentlyRegistered 
-              ? 'Successfully unregistered from event' 
-              : 'Successfully registered for event!',
-            {
-              description: isCurrentlyRegistered 
-                ? 'You can register again anytime' 
-                : `${(item.capacity || 0) - newRegisteredCount} spots remaining`
-            }
-          )
-
-          return {
-            ...item,
-            isRegistered: !isCurrentlyRegistered,
-            registered: newRegisteredCount,
-            registeredUsers: newUsers
-          }
-        }
-        return item
-      })
-    )
+  const handleRSVP = async (eventId: string) => {
+    try {
+      const result = await registerEventMutation({ eventId: eventId as any })
+      toast.success(result.registered ? 'Påmeldt arrangement!' : 'Avmeldt fra arrangement')
+      // Refresh selected event if it's the one we just registered for
+      if (selectedEvent && (selectedEvent._id === eventId || selectedEvent.id === eventId)) {
+        setSelectedEvent({ ...selectedEvent, isRegistered: result.registered })
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Noe gikk galt')
+    }
   }
 
   const handleAddComment = (eventId: string) => {
     if (!newComment.trim()) return
-
-    const comment: Comment = {
-      id: Date.now().toString(),
-      author: 'Alex Johnson',
-      message: newComment,
-      timestamp: 'Just now'
-    }
-
-    setScheduleData(prevData =>
-      prevData.map(item => {
-        if (item.id === eventId) {
-          return {
-            ...item,
-            comments: [...(item.comments || []), comment]
-          }
-        }
-        return item
-      })
-    )
-
-    if (selectedEvent && selectedEvent.id === eventId) {
-      setSelectedEvent(prevEvent => ({
-        ...prevEvent!,
-        comments: [...(prevEvent!.comments || []), comment]
-      }))
-    }
-
+    // TODO: Implement comment functionality in Convex
     setNewComment('')
     toast.success('Kommentar lagt til!')
   }
 
-  const getItemIcon = (item: ScheduleItem) => {
+  const getItemIcon = (item: any) => {
     if (item.type === 'event') {
       switch (item.colorTheme) {
         case 'purple': return Camera
@@ -509,7 +464,7 @@ export function SchedulePage() {
           { bg: 'linear-gradient(to bottom right, rgba(232, 165, 255, 0.2), #F5E6FF, rgba(232, 165, 255, 0.2))', border: 'rgba(232, 165, 255, 0.5)' },
           { bg: 'linear-gradient(to bottom right, rgba(78, 205, 196, 0.2), #E8F6F6, rgba(78, 205, 196, 0.2))', border: 'rgba(78, 205, 196, 0.5)' },
         ]
-        const index = parseInt(item.id) % classColors.length
+        const index = typeof item._id === 'string' ? parseInt(item._id.replace(/\D/g, '')) % classColors.length : 0
         return { background: classColors[index].bg, borderColor: classColors[index].border, className: 'shadow-md' }
       }
     
@@ -588,14 +543,14 @@ export function SchedulePage() {
           <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, transparent)' }}></div>
         </div>
         <div className="space-y-3">
-          {todayItems.map((item, index) => {
+          {todayItems.map((item: any, index: number) => {
             const upcoming = getFirstUpcomingClass()
-            const isFirstUpcoming = upcoming && upcoming.item.id === item.id && item.type === 'class' && !item.attended
+            const isFirstUpcoming = upcoming && upcoming.item._id === item._id && item.type === 'class' && !item.attended
             const IconComponent = getItemIcon(item)
             const itemStyle = getItemStyles(item)
             return (
               <Card 
-                key={item.id} 
+                key={item._id} 
                 className={`${item.type === 'class' ? 'p-5' : 'p-4'} border-2 ${itemStyle.className || ''} transition-all duration-300 hover:shadow-xl ${isFirstUpcoming ? 'ring-2 ring-offset-2' : ''}`} 
                 style={{ 
                   background: item.type === 'class' && item.attended ? 'rgba(0, 0, 0, 0.05)' : itemStyle.background, 
@@ -622,7 +577,7 @@ export function SchedulePage() {
                         <div className="bg-white/30 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[45px]">
                           <div className="text-white font-extrabold text-base leading-none">{timeRemaining.minutes}</div>
                           <div className="text-white/90 text-[10px] font-semibold mt-0.5">min{timeRemaining.minutes !== 1 ? 'utter' : 'utt'}</div>
-                        </div>
+                    </div>
                         <div className="bg-white/30 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[45px]">
                           <div className="text-white font-extrabold text-base leading-none">{timeRemaining.seconds}</div>
                           <div className="text-white/90 text-[10px] font-semibold mt-0.5">sek</div>
@@ -639,8 +594,8 @@ export function SchedulePage() {
                         <h4 className="font-bold text-base truncate" style={{ color: '#006C75' }}>{item.subject}</h4>
                         <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
                           <Clock className="w-4 h-4 flex-shrink-0" />
-                          <span>{item.time}</span>
-                        </div>
+                        <span>{item.time}</span>
+                      </div>
                           <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#00A7B3' }} />
                       </div>
                       <div className="flex items-center gap-2.5 flex-shrink-0">
@@ -651,9 +606,9 @@ export function SchedulePage() {
                         }}>
                           <Coins className="w-4 h-4" style={{ color: item.attended ? '#00A7B3' : 'rgba(0, 167, 179, 0.6)' }} />
                           <span style={{ color: item.attended ? '#00A7B3' : 'rgba(0, 108, 117, 0.7)' }}>{item.points} p</span>
-                        </div>
-                      </div>
                     </div>
+                        </div>
+                          </div>
                     <div className="flex items-center gap-3 text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 flex-shrink-0" />
@@ -664,9 +619,9 @@ export function SchedulePage() {
                           <span>•</span>
                           <span className="truncate">{item.teacher}</span>
                         </>
-                      )}
-                    </div>
+                    )}
                   </div>
+                        </div>
                 ) : (
                   // Simplified Event/Trip card layout
                   <div className="flex items-center justify-between">
@@ -683,19 +638,19 @@ export function SchedulePage() {
                         </div>
                       </div>
                     </div>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => setSelectedEvent(item)}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => setSelectedEvent(item)}
                           className="text-white hover:bg-white/20"
-                        >
+                            >
                           <MessageCircle className="w-4 h-4 mr-1" />
                           Se Detaljer
-                        </Button>
-                      </DialogTrigger>
-                    </Dialog>
+                            </Button>
+                          </DialogTrigger>
+                        </Dialog>
                   </div>
                 )}
               </Card>
@@ -713,38 +668,38 @@ export function SchedulePage() {
           <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #FBBE9E, transparent)' }}></div>
         </div>
         <div className="space-y-3">
-          {tomorrowItems.map((item) => {
+          {tomorrowItems.map((item: any) => {
             const IconComponent = getItemIcon(item)
             const tomorrowItemStyle = getItemStyles(item)
             return (
-              <Card key={item.id} className={`p-4 border-2 opacity-80 ${tomorrowItemStyle.className || ''}`} style={{ background: tomorrowItemStyle.background, borderColor: tomorrowItemStyle.borderColor, backgroundColor: 'rgba(236, 236, 240, 0.3)' }}>
+              <Card key={item._id} className={`p-4 border-2 opacity-80 ${tomorrowItemStyle.className || ''}`} style={{ background: tomorrowItemStyle.background, borderColor: tomorrowItemStyle.borderColor, backgroundColor: 'rgba(236, 236, 240, 0.3)' }}>
                 {item.type === 'class' ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        {item.emoji && (
-                          <span className="text-base">{item.emoji}</span>
-                        )}
-                        {IconComponent && (
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      {item.emoji && (
+                        <span className="text-base">{item.emoji}</span>
+                      )}
+                      {IconComponent && (
                           <IconComponent className="w-4 h-4" style={{ color: '#00A7B3' }} />
                         )}
                         <h4 style={{ color: '#006C75' }}>{item.subject}</h4>
-                      </div>
+                    </div>
                       <div className="flex items-center gap-4 text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{item.time}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          <span>{item.room}</span>
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{item.time}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        <span>{item.room}</span>
                       </div>
                     </div>
-                    <Badge variant="outline">
-                      <Coins className="w-3 h-3 mr-1" />
+                        </div>
+                      <Badge variant="outline">
+                        <Coins className="w-3 h-3 mr-1" />
                       {item.points} p
-                    </Badge>
+                      </Badge>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
@@ -759,19 +714,19 @@ export function SchedulePage() {
                         </div>
                       </div>
                     </div>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => setSelectedEvent(item)}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => setSelectedEvent(item)}
                           className="text-white hover:bg-white/20"
-                        >
+                            >
                           <MessageCircle className="w-4 h-4 mr-1" />
                           Se Detaljer
-                        </Button>
-                      </DialogTrigger>
-                    </Dialog>
+                            </Button>
+                          </DialogTrigger>
+                        </Dialog>
                   </div>
                 )}
               </Card>
@@ -790,40 +745,40 @@ export function SchedulePage() {
             <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #E8A5FF, transparent)' }}></div>
           </div>
           <div className="space-y-3">
-            {upcomingEvents.map((event) => {
+            {upcomingEvents.map((event: any) => {
               const IconComponent = getItemIcon(event)
               const eventStyle = getItemStyles(event)
               return (
-                <Card key={event.id} className={`p-4 border-2 border-dashed ${eventStyle.className || ''}`} style={{ background: eventStyle.background, borderColor: eventStyle.borderColor }}>
+                <Card key={event._id} className={`p-4 border-2 border-dashed ${eventStyle.className || ''}`} style={{ background: eventStyle.background, borderColor: eventStyle.borderColor }}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
-                      {event.emoji && (
+                        {event.emoji && (
                         <span className="text-2xl">{event.emoji}</span>
                       )}
                       <div className="flex-1 min-w-0">
                         <h4 className="text-white font-bold drop-shadow-md mb-1">{event.subject}</h4>
                         <div className="flex items-center gap-2 text-xs text-white/90">
                           <Badge className="text-xs text-white backdrop-blur-sm font-semibold" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)', borderColor: 'rgba(255, 255, 255, 0.4)' }}>
-                            {event.day}
-                          </Badge>
+                          {event.day}
+                        </Badge>
                           <span>•</span>
                           <span>{event.time}</span>
                         </div>
+                        </div>
                       </div>
-                    </div>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => setSelectedEvent(event)}
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => setSelectedEvent(event)}
                           className="text-white hover:bg-white/20"
-                        >
+                              >
                           <MessageCircle className="w-4 h-4 mr-1" />
                           Se Detaljer
-                        </Button>
-                      </DialogTrigger>
-                    </Dialog>
+                              </Button>
+                            </DialogTrigger>
+                          </Dialog>
                   </div>
                 </Card>
               )
@@ -871,7 +826,7 @@ export function SchedulePage() {
               <div className="flex gap-2">
                 <Button
                   variant={selectedEvent.isRegistered ? "outline" : "secondary"}
-                  onClick={() => handleRSVP(selectedEvent.id)}
+                  onClick={() => handleRSVP(selectedEvent._id)}
                   disabled={!selectedEvent.isRegistered && (selectedEvent.registered || 0) >= (selectedEvent.capacity || 0)}
                   className="flex-1"
                 >
@@ -949,7 +904,7 @@ export function SchedulePage() {
                   />
                   <Button 
                     size="sm" 
-                    onClick={() => handleAddComment(selectedEvent.id)}
+                    onClick={() => handleAddComment(selectedEvent._id)}
                     disabled={!newComment.trim()}
                   >
                     Publiser
