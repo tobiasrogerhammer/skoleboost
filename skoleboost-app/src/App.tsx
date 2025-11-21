@@ -201,7 +201,7 @@ function AppContent({
   currentUser: any
   redeemCouponMutation: any
 }) {
-  const handleRedeemCoupon = async (couponId: string, cost: number) => {
+  const handleRedeemCoupon = React.useCallback(async (couponId: string, cost: number) => {
     try {
       await redeemCouponMutation({ couponId: couponId as any })
       toast.success('Kupong innløst! 🎉', {
@@ -210,9 +210,13 @@ function AppContent({
     } catch (error: any) {
       toast.error(error.message || 'Noe gikk galt')
     }
-  }
+  }, [redeemCouponMutation])
 
-  const renderCurrentPage = () => {
+  const handleNavigateToJourneyMap = React.useCallback(() => {
+    setCurrentPage('journey-map')
+  }, [setCurrentPage])
+
+  const renderCurrentPage = React.useMemo(() => {
     switch (currentPage) {
       case 'main':
         return (
@@ -229,7 +233,7 @@ function AppContent({
           <ProfilePage
             currentPoints={currentUser.currentPoints}
             totalEarned={currentUser.totalEarned}
-            onNavigateToJourneyMap={() => setCurrentPage('journey-map')}
+            onNavigateToJourneyMap={handleNavigateToJourneyMap}
           />
         )
       case 'journey-map':
@@ -239,7 +243,7 @@ function AppContent({
       default:
         return null
     }
-  }
+  }, [currentPage, currentUser.currentPoints, currentUser.totalEarned, handleRedeemCoupon, handleNavigateToJourneyMap])
 
   return (
     <div className="min-h-screen bg-background">
@@ -274,17 +278,19 @@ function AppContent({
               </Button>
             )}
           </div>
-          {renderCurrentPage()}
+          {renderCurrentPage}
         </div>
       ) : (
-        <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
-          <div className="absolute top-4 right-4 z-50 flex gap-2">
-            {currentUser && <RoleToggle currentUser={currentUser} />}
-            <UserButton afterSignOutUrl="/" />
+        <>
+          <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
+            <div className="absolute top-4 right-4 z-50 flex gap-2">
+              {currentUser && <RoleToggle currentUser={currentUser} />}
+              <UserButton afterSignOutUrl="/" />
+            </div>
+            {renderCurrentPage}
           </div>
-          {renderCurrentPage()}
           <BottomNav currentPage={currentPage} onPageChange={setCurrentPage} />
-        </div>
+        </>
       )}
     </div>
   )
@@ -300,7 +306,7 @@ function TeacherAppContent({
   setCurrentPage: (page: string) => void
   teacher: any
 }) {
-  const renderCurrentPage = () => {
+  const renderCurrentPage = React.useMemo(() => {
     switch (currentPage) {
       case 'main':
         return <TeacherDashboard teacher={teacher} />
@@ -311,17 +317,19 @@ function TeacherAppContent({
       default:
         return <TeacherDashboard teacher={teacher} />
     }
-  }
+  }, [currentPage, teacher])
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
-      <div className="absolute top-4 right-4 z-50 flex gap-2">
-        <RoleToggle currentUser={teacher} />
-        <UserButton afterSignOutUrl="/" />
+    <>
+      <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
+        <div className="absolute top-4 right-4 z-50 flex gap-2">
+          <RoleToggle currentUser={teacher} />
+          <UserButton afterSignOutUrl="/" />
+        </div>
+        {renderCurrentPage}
       </div>
-      {renderCurrentPage()}
       <BottomNav currentPage={currentPage} onPageChange={setCurrentPage} />
-    </div>
+    </>
   )
 }
 

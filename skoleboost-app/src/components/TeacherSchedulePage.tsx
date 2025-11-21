@@ -55,8 +55,8 @@ export function TeacherSchedulePage() {
   })
   const [selectedScheduleItem, setSelectedScheduleItem] = useState<any | null>(null)
 
-  const scheduleDataQuery = useQuery(api.teachers.getTeacherSchedule)
-  const classesQuery = useQuery(api.teachers.getTeacherClasses)
+  const scheduleDataQuery = useQuery(api.teachers.getTeacherSchedule, {})
+  const classesQuery = useQuery(api.teachers.getTeacherClasses, {})
 
   // Check if we're using mock data
   const usingMockData = !classesQuery || classesQuery.length === 0
@@ -85,18 +85,15 @@ export function TeacherSchedulePage() {
   const currentDayName = getDayName()
 
   return (
-    <div className="pb-20 px-4 pt-6 max-w-md mx-auto space-y-6">
+    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-4">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-block mb-3 p-3 rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.1), rgba(232, 246, 246, 0.5))' }}>
-          <Calendar className="w-8 h-8" style={{ color: '#00A7B3' }} />
-        </div>
-        <h1 className="mb-2 font-bold text-3xl" style={{ color: '#006C75' }}>Min Timeplan</h1>
-        <p className="text-base font-semibold mb-1" style={{ color: 'rgba(0, 108, 117, 0.9)' }}>Oversikt over alle timer</p>
+      <div className="text-center mb-4 mt-6">
+        <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>Min Timeplan</h1>
+        <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Oversikt over alle timer 📚</p>
       </div>
 
       {/* Day Selector */}
-      <Card className="p-4 border-2" style={{ borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '16px' }}>
+      <Card className="p-3 border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
         <div className="flex items-center gap-3">
           <label className="text-sm font-semibold" style={{ color: '#006C75' }}>Velg dag:</label>
           <Select value={selectedDay} onValueChange={setSelectedDay}>
@@ -117,18 +114,14 @@ export function TeacherSchedulePage() {
 
       {/* Schedule Items */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="h-1 w-12 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, #00C4D4)' }}></div>
-          <h2 className="font-extrabold text-2xl" style={{ color: '#006C75' }}>{selectedDay}s Timeplan</h2>
-          <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, transparent)' }}></div>
-        </div>
+        <h2 className="font-bold text-lg mb-3" style={{ color: '#006C75' }}>{selectedDay}s Timeplan</h2>
         {selectedDayItems.length === 0 ? (
-          <Card className="p-8 text-center border-2" style={{ borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '16px' }}>
-            <p className="text-lg font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen timer på {selectedDay}</p>
+          <Card className="p-6 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
+            <p className="text-base font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen timer på {selectedDay}</p>
             <p className="text-sm mt-2" style={{ color: 'rgba(0, 108, 117, 0.5)' }}>Nyt fridagen! 🎉</p>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {selectedDayItems.map((item: any) => {
               const now = new Date()
               const timeMatch = item.time.match(/(\d{2}):(\d{2})/)
@@ -153,26 +146,26 @@ export function TeacherSchedulePage() {
               return (
                 <Card
                   key={item._id}
-                  className="p-4 border-2"
+                  className="p-3 border-2"
                   style={{
-                    background: 'linear-gradient(to bottom right, rgba(0, 167, 179, 0.1), rgba(232, 246, 246, 0.5))',
-                    borderColor: 'rgba(0, 167, 179, 0.3)',
-                    borderRadius: '16px',
+                    background: 'linear-gradient(to bottom right, rgba(232, 165, 255, 0.1), rgba(232, 246, 246, 0.5))',
+                    borderColor: 'rgba(232, 165, 255, 0.3)',
+                    borderRadius: '12px',
                   }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-bold text-base" style={{ color: '#006C75' }}>
+                        <h4 className="font-bold text-sm" style={{ color: '#006C75' }}>
                           {item.subject}
                         </h4>
                         {selectedDay === currentDayName && (
-                          <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)', color: '#00A7B3' }}>
+                          <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(232, 165, 255, 0.2)', color: '#E8A5FF' }}>
                             {timeText}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                      <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           <span>{item.time}</span>
@@ -188,9 +181,10 @@ export function TeacherSchedulePage() {
                       <Button
                         size="sm"
                         onClick={() => setSelectedScheduleItem(item)}
-                        style={{ backgroundColor: '#00A7B3', color: 'white' }}
+                        className="text-xs"
+                        style={{ backgroundColor: '#E8A5FF', color: 'white' }}
                       >
-                        <CheckCircle className="w-4 h-4 mr-1" />
+                        <CheckCircle className="w-3 h-3 mr-1" />
                         Ta Oppmøte
                       </Button>
                     )}

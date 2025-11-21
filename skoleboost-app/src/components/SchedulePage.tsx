@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Clock, MapPin, Coins, CheckCircle, XCircle, Camera, Palette, Music, TreePine, Gamepad2, Users, UserPlus, UserCheck, MessageCircle, Image, Heart } from 'lucide-react'
+import { Clock, MapPin, Coins, CheckCircle, XCircle, Camera, Palette, Music, TreePine, Gamepad2, Users, UserPlus, UserCheck, MessageCircle, Image, Heart, ChevronRight, Calendar } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
@@ -389,7 +389,14 @@ export function SchedulePage() {
     const tomorrowName = days[tomorrowIndex]
     return scheduleData.filter((item: any) => item.day === tomorrowName)
   }, [scheduleData])
-  const upcomingEvents = useMemo(() => scheduleData.filter((item: any) => ['Fredag', 'Lørdag'].includes(item.day)), [scheduleData])
+  const upcomingEvents = useMemo(() => 
+    scheduleData.filter((item: any) => 
+      ['Fredag', 'Lørdag'].includes(item.day) && 
+      (item.type === 'event' || item.type === 'trip') &&
+      item.subject !== 'Lunsj'
+    ), 
+    [scheduleData]
+  )
   
   // Auto-setup schedule if empty
   React.useEffect(() => {
@@ -506,17 +513,17 @@ export function SchedulePage() {
     return null
   }
 
-    const getItemStyles = (item: ScheduleItem): { background?: string, borderColor?: string, className?: string } => {
+    const getItemStyles = (item: ScheduleItem, colorIndex?: number): { background?: string, borderColor?: string, className?: string } => {
       if (item.type === 'class') {
-        // Colorful class cards based on subject
+        // Colorful class cards - use provided colorIndex if available, otherwise fallback to ID-based
         const classColors = [
           { bg: 'linear-gradient(to bottom right, rgba(0, 167, 179, 0.2), #E8F6F6, rgba(0, 167, 179, 0.2))', border: 'rgba(0, 167, 179, 0.5)' },
           { bg: 'linear-gradient(to bottom right, rgba(251, 190, 158, 0.2), #FFF4E6, rgba(251, 190, 158, 0.2))', border: 'rgba(251, 190, 158, 0.5)' },
           { bg: 'linear-gradient(to bottom right, rgba(232, 165, 255, 0.2), #F5E6FF, rgba(232, 165, 255, 0.2))', border: 'rgba(232, 165, 255, 0.5)' },
           { bg: 'linear-gradient(to bottom right, rgba(78, 205, 196, 0.2), #E8F6F6, rgba(78, 205, 196, 0.2))', border: 'rgba(78, 205, 196, 0.5)' },
         ]
-        const index = typeof item._id === 'string' ? parseInt(item._id.replace(/\D/g, '')) % classColors.length : 0
-        return { background: classColors[index].bg, borderColor: classColors[index].border, className: 'shadow-md' }
+        const index = colorIndex !== undefined ? colorIndex : (typeof item._id === 'string' ? parseInt(item._id.replace(/\D/g, '')) % classColors.length : 0)
+        return { background: classColors[index % classColors.length].bg, borderColor: classColors[index % classColors.length].border, className: 'shadow-md' }
       }
     
     switch (item.colorTheme) {
@@ -542,7 +549,7 @@ export function SchedulePage() {
   // Show loading state while setting up schedule
   if (scheduleData === undefined || (scheduleData.length === 0 && isSettingUp)) {
     return (
-      <div className="pb-20 px-4 pt-6 max-w-md mx-auto space-y-6">
+      <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-6">
         <div className="text-center mb-8">
           <div className="inline-block mb-3 p-3 rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.1), rgba(232, 246, 246, 0.5))' }}>
             <span className="text-4xl">📚</span>
@@ -555,33 +562,77 @@ export function SchedulePage() {
   }
 
   return (
-    <div className="pb-20 px-4 pt-6 max-w-md mx-auto space-y-6">
+    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-6">
       {/* Enhanced Header */}
-      <div className="text-center mb-8">
-        <div className="inline-block mb-3 p-3 rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.1), rgba(232, 246, 246, 0.5))' }}>
-          <span className="text-4xl">📚</span>
-        </div>
-        <h1 className="mb-2 font-bold text-3xl" style={{ color: '#006C75' }}>Din Timeplan</h1>
-        <p className="text-base font-semibold mb-1" style={{ color: 'rgba(0, 108, 117, 0.9)' }}>Følg oppmøte og tjen poeng! 💪</p>
+      <div className="text-center mb-6">
+        <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>Din Timeplan</h1>
+        <p className="text-sm font-medium mb-1" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Følg oppmøte og tjen poeng! 💪</p>
       </div>
 
       {/* Day Selector */}
-      <Card className="p-4 border-2" style={{ borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '16px' }}>
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-semibold" style={{ color: '#006C75' }}>Velg dag:</label>
-          <Select value={selectedDay} onValueChange={setSelectedDay}>
-            <SelectTrigger className="flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {daysOfWeek.map((day) => (
-                <SelectItem key={day} value={day}>
-                  {day}
-                  {day === currentDayName && ' (I dag)'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <Card className="p-4 border-2 shadow-lg" style={{ 
+        background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.05), #E8F6F6, rgba(0, 167, 179, 0.05))', 
+        borderColor: 'rgba(0, 167, 179, 0.3)', 
+        borderRadius: '16px',
+        boxShadow: '0 4px 12px rgba(0, 167, 179, 0.1)'
+      }}>
+        <div>
+          <label className="text-xs font-semibold block mb-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Velg dag</label>
+          <div className="flex gap-3 items-center">
+            <div className="p-3 rounded-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }}>
+              <Calendar className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <Select value={selectedDay} onValueChange={setSelectedDay}>
+              <SelectTrigger 
+                className="flex-1 font-semibold transition-all duration-200 hover:shadow-md" 
+                style={{ 
+                  color: '#006C75',
+                  backgroundColor: 'white',
+                  borderColor: 'rgba(0, 167, 179, 0.3)',
+                  borderWidth: '2px',
+                  boxShadow: '0 2px 8px rgba(0, 167, 179, 0.15)'
+                }}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent 
+                className="bg-white border-2 shadow-xl rounded-lg [&_button[data-slot='select-scroll-up-button']]:hidden [&_button[data-slot='select-scroll-down-button']]:hidden"
+                style={{ 
+                  borderColor: 'rgba(0, 167, 179, 0.2)',
+                  boxShadow: '0 8px 24px rgba(0, 167, 179, 0.2)'
+                }}
+              >
+                {daysOfWeek.map((day) => {
+                  const isToday = day === currentDayName
+                  return (
+                    <SelectItem 
+                      key={day} 
+                      value={day}
+                      className="transition-all duration-150 cursor-pointer"
+                      style={{ 
+                        color: isToday ? '#00A7B3' : '#006C75',
+                        backgroundColor: 'white',
+                        fontWeight: isToday ? '600' : '500'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = isToday ? 'rgba(0, 167, 179, 0.1)' : 'rgba(0, 167, 179, 0.05)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'white'
+                      }}
+                    >
+                      <span className="flex items-center gap-2">
+                        {day}
+                        {isToday && <span className="text-xs font-semibold" style={{ color: '#00A7B3' }}>(I dag)</span>}
+                      </span>
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
         {scheduleData.length === 0 && (
           <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(0, 167, 179, 0.2)' }}>
@@ -608,46 +659,56 @@ export function SchedulePage() {
       </Card>
 
       {/* Enhanced Selected Day's Stats */}
-      <Card className="p-5 border-2 shadow-2xl" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '20px', boxShadow: '0 10px 40px rgba(0, 167, 179, 0.3)' }}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-white font-extrabold text-xl drop-shadow-lg">{selectedDay}s Fremgang</h3>
-          <div className="bg-white/30 p-2 rounded-xl backdrop-blur-md">
-            <CheckCircle className="w-5 h-5 text-white" />
+      <Card className="p-5 border-2 shadow-2xl transition-all duration-300 hover:shadow-3xl" style={{ 
+        background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', 
+        borderColor: 'rgba(255, 255, 255, 0.3)', 
+        borderRadius: '20px', 
+        boxShadow: '0 10px 40px rgba(0, 167, 179, 0.3)'
+      }}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-white font-extrabold text-xl drop-shadow-lg mb-0.5">{selectedDay}s Fremgang</h3>
+            <p className="text-xs text-white/90 font-medium">Din daglige oversikt</p>
           </div>
+          <div className="bg-white/30 p-3 rounded-xl backdrop-blur-md shadow-lg border border-white/20">
+            <CheckCircle className="w-6 h-6 text-white" />
           </div>
+        </div>
         <div className="grid grid-cols-3 gap-3 text-center">
-          <div className="bg-white/30 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-            <div className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">{attendedSelectedDay}</div>
+          <div className="bg-white/30 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/20 transition-all duration-300 hover:bg-white/40 hover:scale-105">
+            <div className="text-3xl font-extrabold text-white drop-shadow-lg mb-1.5">{attendedSelectedDay}</div>
             <div className="text-xs text-white font-semibold uppercase tracking-wide">Deltatt</div>
-            <div className="text-xs text-white/80 mt-1">✅ Fullført</div>
-            </div>
-          <div className="bg-white/30 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-            <div className="text-3xl font-extrabold text-white drop-shadow-lg mb-1">{selectedDayItems.length - attendedSelectedDay}</div>
-            <div className="text-xs text-white font-semibold uppercase tracking-wide">Gjenstår</div>
-            <div className="text-xs text-white/80 mt-1">⏳ Igjen</div>
           </div>
-          <div className="bg-white/30 backdrop-blur-md rounded-xl p-3 shadow-lg border border-white/20">
-            <div className="flex items-center justify-center mb-1">
+          <div className="bg-white/30 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/20 transition-all duration-300 hover:bg-white/40 hover:scale-105">
+            <div className="text-3xl font-extrabold text-white drop-shadow-lg mb-1.5">{selectedDayItems.length - attendedSelectedDay}</div>
+            <div className="text-xs text-white font-semibold uppercase tracking-wide">Gjenstår</div>
+          </div>
+          <div className="bg-white/30 backdrop-blur-md rounded-xl p-4 shadow-lg border border-white/20 transition-all duration-300 hover:bg-white/40 hover:scale-105">
+            <div className="flex items-center justify-center mb-1.5">
               <Coins className="w-6 h-6 text-white mr-1 drop-shadow-lg" />
               <span className="text-3xl font-extrabold text-white drop-shadow-lg">{totalPointsSelectedDay}</span>
             </div>
             <div className="text-xs text-white font-semibold uppercase tracking-wide">Poeng</div>
-            <div className="text-xs text-white/80 mt-1">💰 Tjent</div>
           </div>
         </div>
       </Card>
 
       {/* Enhanced Selected Day's Schedule */}
       <div>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="h-1 w-12 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, #00C4D4)' }}></div>
-          <h2 className="font-extrabold text-2xl" style={{ color: '#006C75' }}>{selectedDay}s Timeplan</h2>
-          <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, transparent)' }}></div>
-        </div>
+         <div className="flex items-center gap-2 mb-4">
+           <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, #00C4D4)' }}></div>
+           <h2 className="font-extrabold text-2xl whitespace-nowrap flex-shrink-0" style={{ color: '#006C75' }}>{selectedDay}s Timeplan</h2>
+           <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, #00C4D4)' }}></div>
+         </div>
         {selectedDayItems.length === 0 ? (
-          <Card className="p-8 text-center border-2" style={{ borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '16px' }}>
-            <p className="text-lg font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen timer på {selectedDay}</p>
-            <p className="text-sm mt-2" style={{ color: 'rgba(0, 108, 117, 0.5)' }}>Nyt fridagen! 🎉</p>
+          <Card className="p-10 text-center border-2 shadow-lg" style={{ 
+            background: 'linear-gradient(135deg, rgba(251, 190, 158, 0.1), rgba(255, 159, 102, 0.05))',
+            borderColor: 'rgba(251, 190, 158, 0.3)', 
+            borderRadius: '20px',
+            boxShadow: '0 4px 12px rgba(251, 190, 158, 0.2)'
+          }}>
+            <p className="text-xl font-bold mb-2" style={{ color: '#006C75' }}>Ingen timer på {selectedDay}</p>
+            <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Nyt fridagen! Ta en pause og lad opp batteriene</p>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -655,40 +716,64 @@ export function SchedulePage() {
             const upcoming = getFirstUpcomingClass()
             const isFirstUpcoming = upcoming && upcoming.item._id === item._id && item.type === 'class' && !item.attended
             const IconComponent = getItemIcon(item)
-            const itemStyle = getItemStyles(item)
+            
+            // Calculate color index for non-attended classes to ensure no two consecutive have same color
+            let colorIndex: number | undefined = undefined
+            if (item.type === 'class' && !item.attended) {
+              // Count how many non-attended classes come before this one
+              let nonAttendedCount = 0
+              for (let i = 0; i < index; i++) {
+                if (selectedDayItems[i].type === 'class' && !selectedDayItems[i].attended) {
+                  nonAttendedCount++
+                }
+              }
+              colorIndex = nonAttendedCount
+            }
+            
+            const itemStyle = getItemStyles(item, colorIndex)
             return (
               <Card 
                 key={item._id} 
-                className={`${item.type === 'class' ? 'p-5' : 'p-4'} border-2 ${itemStyle.className || ''} transition-all duration-300 hover:shadow-xl ${isFirstUpcoming ? 'ring-2 ring-offset-2' : ''}`} 
+                className={`${item.type === 'class' ? 'p-5' : 'p-4'} border-2 ${itemStyle.className || ''} transition-all duration-300 hover:shadow-xl hover:scale-[1.01] ${isFirstUpcoming ? 'ring-2 ring-offset-2' : ''}`} 
                 style={{ 
-                  background: item.type === 'class' && item.attended ? 'rgba(0, 0, 0, 0.05)' : itemStyle.background, 
-                  borderColor: item.type === 'class' && item.attended ? 'rgba(0, 0, 0, 0.2)' : (isFirstUpcoming ? '#00A7B3' : itemStyle.borderColor),
+                  background: item.type === 'class' && item.attended ? '#F3F4F6' : itemStyle.background, 
+                  borderColor: item.type === 'class' && item.attended ? '#D1D5DB' : (isFirstUpcoming ? '#00A7B3' : itemStyle.borderColor),
                   borderRadius: '16px',
-                  boxShadow: isFirstUpcoming ? '0 8px 24px rgba(0, 167, 179, 0.3)' : undefined,
-                  ringColor: isFirstUpcoming ? '#00A7B3' : undefined
+                  boxShadow: isFirstUpcoming 
+                    ? '0 8px 24px rgba(0, 167, 179, 0.3)' 
+                    : item.type === 'class' && item.attended 
+                      ? '0 2px 8px rgba(0, 0, 0, 0.1)' 
+                      : '0 4px 12px rgba(0, 167, 179, 0.15)',
+                  ringColor: isFirstUpcoming ? '#00A7B3' : undefined,
+                  opacity: item.type === 'class' && item.attended ? 0.85 : 1
                 }}
               >
                 {isFirstUpcoming && timeRemaining && (
-                  <div className="mb-2.5 p-2.5 rounded-xl" style={{ background: 'linear-gradient(135deg, #00A7B3, #00C4D4)', boxShadow: '0 4px 12px rgba(0, 167, 179, 0.3)' }}>
+                  <div className="mb-3 p-3 rounded-xl border-2 border-white/30" style={{ 
+                    background: 'linear-gradient(135deg, #00A7B3, #00C4D4)', 
+                    boxShadow: '0 4px 16px rgba(0, 167, 179, 0.4)'
+                  }}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-white" />
-                        <span className="text-white font-bold text-xs">Neste time starter om:</span>
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm">
+                          <Clock className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-white font-bold text-sm">Neste time starter om:</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         {timeRemaining.hours > 0 && (
-                          <div className="bg-white/30 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[45px]">
-                            <div className="text-white font-extrabold text-base leading-none">{timeRemaining.hours}</div>
-                            <div className="text-white/90 text-[10px] font-semibold mt-0.5">t{timeRemaining.hours !== 1 ? 'imer' : 'ime'}</div>
+                          <div className="bg-white/30 backdrop-blur-md px-3 py-2 rounded-lg text-center min-w-[50px] border border-white/20 shadow-sm">
+                            <div className="text-white font-extrabold text-lg leading-none">{timeRemaining.hours}</div>
+                            <div className="text-white/90 text-[10px] font-semibold mt-1">t{timeRemaining.hours !== 1 ? 'imer' : 'ime'}</div>
                           </div>
                         )}
-                        <div className="bg-white/30 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[45px]">
-                          <div className="text-white font-extrabold text-base leading-none">{timeRemaining.minutes}</div>
-                          <div className="text-white/90 text-[10px] font-semibold mt-0.5">min{timeRemaining.minutes !== 1 ? 'utter' : 'utt'}</div>
+                        <div className="bg-white/30 backdrop-blur-md px-3 py-2 rounded-lg text-center min-w-[50px] border border-white/20 shadow-sm">
+                          <div className="text-white font-extrabold text-lg leading-none">{timeRemaining.minutes}</div>
+                          <div className="text-white/90 text-[10px] font-semibold mt-1">min{timeRemaining.minutes !== 1 ? 'utter' : 'utt'}</div>
                     </div>
-                        <div className="bg-white/30 backdrop-blur-md px-2 py-1 rounded-lg text-center min-w-[45px]">
-                          <div className="text-white font-extrabold text-base leading-none">{timeRemaining.seconds}</div>
-                          <div className="text-white/90 text-[10px] font-semibold mt-0.5">sek</div>
+                        <div className="bg-white/30 backdrop-blur-md px-3 py-2 rounded-lg text-center min-w-[50px] border border-white/20 shadow-sm">
+                          <div className="text-white font-extrabold text-lg leading-none">{timeRemaining.seconds}</div>
+                          <div className="text-white/90 text-[10px] font-semibold mt-1">sek</div>
                         </div>
                       </div>
                     </div>
@@ -699,25 +784,26 @@ export function SchedulePage() {
                   <div className="space-y-3.5">
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <h4 className="font-bold text-base truncate" style={{ color: '#006C75' }}>{item.subject}</h4>
-                        <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                        <h4 className="font-bold text-base truncate" style={{ color: item.attended ? '#6B7280' : '#006C75' }}>{item.subject}</h4>
+                        <div className="flex items-center gap-1.5 text-sm font-medium" style={{ color: item.attended ? '#9CA3AF' : 'rgba(0, 108, 117, 0.7)' }}>
                           <Clock className="w-4 h-4 flex-shrink-0" />
                         <span>{item.time}</span>
                       </div>
-                          <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#00A7B3' }} />
+                          {item.attended && <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#6B7280' }} />}
                       </div>
                       <div className="flex items-center gap-2.5 flex-shrink-0">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold" style={{ 
+                        <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold shadow-sm transition-all duration-200 hover:scale-105" style={{ 
                           border: '1px solid',
-                          borderColor: item.attended ? 'rgba(0, 167, 179, 0.5)' : 'rgba(0, 167, 179, 0.3)',
-                          backgroundColor: item.attended ? 'rgba(0, 167, 179, 0.1)' : 'transparent'
+                          borderColor: item.attended ? '#D1D5DB' : 'rgba(0, 167, 179, 0.3)',
+                          backgroundColor: item.attended ? '#E5E7EB' : 'rgba(255, 255, 255, 0.9)',
+                          boxShadow: item.attended ? '0 1px 3px rgba(0, 0, 0, 0.1)' : '0 2px 6px rgba(0, 167, 179, 0.2)'
                         }}>
-                          <Coins className="w-4 h-4" style={{ color: item.attended ? '#00A7B3' : 'rgba(0, 167, 179, 0.6)' }} />
-                          <span style={{ color: item.attended ? '#00A7B3' : 'rgba(0, 108, 117, 0.7)' }}>{item.points} p</span>
+                          <Coins className="w-4 h-4" style={{ color: item.attended ? '#6B7280' : '#00A7B3' }} />
+                          <span style={{ color: item.attended ? '#6B7280' : '#006C75' }}>{item.points} p</span>
                     </div>
                         </div>
                           </div>
-                    <div className="flex items-center gap-3 text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                    <div className="flex items-center gap-3 text-sm font-medium" style={{ color: item.attended ? '#9CA3AF' : 'rgba(0, 108, 117, 0.7)' }}>
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 flex-shrink-0" />
                         <span className="truncate">{item.room}</span>
@@ -746,19 +832,21 @@ export function SchedulePage() {
                         </div>
                       </div>
                     </div>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              onClick={() => setSelectedEvent(item)}
-                          className="text-white hover:bg-white/20"
-                            >
-                          <MessageCircle className="w-4 h-4 mr-1" />
-                          Se Detaljer
-                            </Button>
-                          </DialogTrigger>
-                        </Dialog>
+                        {item.subject !== 'Lunsj' && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => setSelectedEvent(item)}
+                            className="text-white hover:bg-white/20"
+                              >
+                            <MessageCircle className="w-4 h-4 mr-1" />
+                            Se Detaljer
+                              </Button>
+                            </DialogTrigger>
+                          </Dialog>
+                        )}
                   </div>
                 )}
               </Card>
@@ -768,127 +856,48 @@ export function SchedulePage() {
         )}
       </div>
 
-      {/* Enhanced Tomorrow's Schedule Preview */}
-      {selectedDay === currentDayName && tomorrowItems.length > 0 && (
-      <div>
-        <div className="flex items-center gap-3 mb-5">
-          <div className="h-1 w-12 rounded-full" style={{ background: 'linear-gradient(90deg, #FBBE9E, #FF9F66)' }}></div>
-          <h2 className="font-extrabold text-2xl" style={{ color: '#006C75' }}>Morgendagens Forhåndsvisning</h2>
-          <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #FBBE9E, transparent)' }}></div>
-        </div>
-        <div className="space-y-3">
-          {tomorrowItems.map((item: any) => {
-            const IconComponent = getItemIcon(item)
-            const tomorrowItemStyle = getItemStyles(item)
-            return (
-              <Card key={item._id} className={`p-4 border-2 opacity-80 ${tomorrowItemStyle.className || ''}`} style={{ background: tomorrowItemStyle.background, borderColor: tomorrowItemStyle.borderColor, backgroundColor: 'rgba(236, 236, 240, 0.3)' }}>
-                {item.type === 'class' ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      {item.emoji && (
-                        <span className="text-base">{item.emoji}</span>
-                      )}
-                      {IconComponent && (
-                          <IconComponent className="w-4 h-4" style={{ color: '#00A7B3' }} />
-                        )}
-                        <h4 style={{ color: '#006C75' }}>{item.subject}</h4>
-                    </div>
-                      <div className="flex items-center gap-4 text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>{item.time}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        <span>{item.room}</span>
-                      </div>
-                    </div>
-                        </div>
-                      <Badge variant="outline">
-                        <Coins className="w-3 h-3 mr-1" />
-                      {item.points} p
-                      </Badge>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      {item.emoji && (
-                        <span className="text-2xl">{item.emoji}</span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold drop-shadow-md mb-1" style={{ color: 'white' }}>{item.subject}</h4>
-                        <div className="flex items-center gap-2 text-xs text-white/90">
-                          <span>{item.time}</span>
-                        </div>
-                      </div>
-                    </div>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              onClick={() => setSelectedEvent(item)}
-                          className="text-white hover:bg-white/20"
-                            >
-                          <MessageCircle className="w-4 h-4 mr-1" />
-                          Se Detaljer
-                            </Button>
-                          </DialogTrigger>
-                        </Dialog>
-                  </div>
-                )}
-              </Card>
-            )
-          })}
-        </div>
-      </div>
-      )}
-
       {/* Enhanced Upcoming Events */}
       {upcomingEvents.length > 0 && (
         <div>
-          <div className="flex items-center gap-3 mb-5">
-            <div className="h-1 w-12 rounded-full" style={{ background: 'linear-gradient(90deg, #E8A5FF, #C77DFF)' }}></div>
-            <h2 className="font-extrabold text-2xl" style={{ color: '#006C75' }}>🌟 Kommende Arrangementer</h2>
-            <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #E8A5FF, transparent)' }}></div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #E8A5FF, #C77DFF)' }}></div>
+            <h2 className="font-extrabold text-2xl whitespace-nowrap flex-shrink-0" style={{ color: '#006C75' }}>Kommende Arrangementer</h2>
+            <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #E8A5FF, #C77DFF)' }}></div>
           </div>
           <div className="space-y-3">
             {upcomingEvents.map((event: any) => {
-              const IconComponent = getItemIcon(event)
               const eventStyle = getItemStyles(event)
+              
               return (
-                <Card key={event._id} className={`p-4 border-2 border-dashed ${eventStyle.className || ''}`} style={{ background: eventStyle.background, borderColor: eventStyle.borderColor }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                        {event.emoji && (
-                        <span className="text-2xl">{event.emoji}</span>
-                      )}
+                <Card 
+                  key={event._id} 
+                  className="p-3 border-2 cursor-pointer active:scale-[0.98] transition-all duration-200" 
+                  style={{ 
+                    background: eventStyle.background, 
+                    borderColor: eventStyle.borderColor,
+                    borderRadius: '12px'
+                  }}
+                  onClick={() => setSelectedEvent(event)}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <span className="text-2xl flex-shrink-0">{event.emoji}</span>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold mb-1" style={{ color: '#006C75' }}>{event.subject}</h4>
-                        <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>
-                          <Badge className="text-xs backdrop-blur-sm font-semibold" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)', borderColor: 'rgba(0, 167, 179, 0.3)', color: '#006C75' }}>
-                          {event.day}
-                        </Badge>
-                          <span>•</span>
-                          <span>{event.time}</span>
-                        </div>
+                        <h4 className="text-white font-bold text-base mb-1 drop-shadow-lg line-clamp-1">{event.subject}</h4>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge className="text-xs bg-white/40 text-white border-white/50 backdrop-blur-md font-bold px-1.5 py-0.5">
+                            {event.day}
+                          </Badge>
+                          <div className="text-white font-semibold bg-white/40 px-2 py-0.5 rounded-full backdrop-blur-md text-xs">
+                            ⏰ {event.time}
+                          </div>
                         </div>
                       </div>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => setSelectedEvent(event)}
-                          style={{ color: '#00A7B3' }}
-                          className="hover:bg-[rgba(0,167,179,0.1)]"
-                              >
-                          <MessageCircle className="w-4 h-4 mr-1" />
-                          Se Detaljer
-                              </Button>
-                            </DialogTrigger>
-                          </Dialog>
+                    </div>
+                    <div className="flex items-center gap-1 text-white/90 flex-shrink-0">
+                      <span className="text-xs font-semibold">Se detaljer</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
                   </div>
                 </Card>
               )

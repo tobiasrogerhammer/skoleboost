@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Coins, ShoppingBag, Star, TrendingUp, Calendar, Users, UserPlus, ChevronRight } from 'lucide-react'
+import { Coins, ShoppingBag, Star, TrendingUp, Calendar, Users, UserPlus, UserMinus, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { Card } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -141,8 +141,10 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
   const todayPoints = 15 // Mock today's earned points
   const attendanceRate = 80
   const classesAttended = 12
-  const totalClasses = 15
+  const totalClasses = 28 // 28 timer per uke (ikke inkludert lunsj)
   const [showAllEvents, setShowAllEvents] = useState(false)
+  const [registeredEvents, setRegisteredEvents] = useState<Set<string>>(new Set())
+  const [redeemedCoupon, setRedeemedCoupon] = useState<{ coupon: any, cost: number, newBalance: number } | null>(null)
   
   // Time-based greeting
   const getGreeting = () => {
@@ -167,9 +169,9 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
   }
 
   return (
-    <div className="pb-20 px-4 pt-4 max-w-md mx-auto space-y-4">
+    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-4">
       {/* Enhanced Header */}
-      <div className="text-center mt-4 mb-4">
+      <div className="text-center mb-4 mt-6">
         <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>{greeting.text}</h1>
         <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Du gjør det bra! Fortsett sånn! 🚀</p>
       </div>
@@ -310,76 +312,101 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Sosiale Arrangementer & Utflukter 🎉</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-4">
+          <div className="space-y-2 mt-4">
             {socialEvents.map((event: any) => {
               const eventStyle = getEventStyles(event.colorTheme)
-              const isFull = event.registered >= event.capacity
-              const spotsLeft = event.capacity - event.registered
-              const fillPercentage = (event.registered / event.capacity) * 100
+              const isRegistered = registeredEvents.has(event._id)
+              const currentRegistered = isRegistered ? event.registered + 1 : event.registered
+              const isFull = currentRegistered >= event.capacity
+              const fillPercentage = (currentRegistered / event.capacity) * 100
+
+              const handleToggleRegistration = () => {
+                setRegisteredEvents(prev => {
+                  const newSet = new Set(prev)
+                  if (newSet.has(event._id)) {
+                    newSet.delete(event._id)
+                  } else {
+                    newSet.add(event._id)
+                  }
+                  return newSet
+                })
+              }
 
               return (
                 <Card 
                   key={event._id} 
-                  className="p-4 border-2" 
+                  className="p-3 border-2" 
                   style={{ 
                     background: eventStyle.bg, 
                     borderColor: eventStyle.border,
-                    borderRadius: '16px'
+                    borderRadius: '12px'
                   }}
                 >
-                  <div className="flex items-start gap-3 mb-3">
-                    <span className="text-3xl">{event.emoji}</span>
+                  <div className="flex items-start gap-2 mb-2">
+                    <span className="text-2xl flex-shrink-0">{event.emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-white font-extrabold text-lg mb-1 drop-shadow-lg">{event.title}</h4>
-                      <Badge className="text-xs bg-white/40 text-white border-white/50 backdrop-blur-md font-bold px-2 py-0.5">
-                        {event.date}
-                    </Badge>
+                      <h4 className="text-white font-bold text-base mb-1 drop-shadow-lg line-clamp-1">{event.title}</h4>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Badge className="text-xs bg-white/40 text-white border-white/50 backdrop-blur-md font-bold px-1.5 py-0.5">
+                          {event.date}
+                        </Badge>
+                        <div className="text-white font-semibold bg-white/40 px-2 py-0.5 rounded-full backdrop-blur-md text-xs">
+                          ⏰ {event.time}
+                        </div>
+                        <div className="flex items-center gap-1 text-white font-semibold bg-white/40 px-2 py-0.5 rounded-full backdrop-blur-md text-xs">
+                          <Users className="w-3 h-3" />
+                          <span>{currentRegistered}/{event.capacity}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
-                  <p className="text-sm text-white/95 mb-3 font-medium">{event.description}</p>
+                  <p className="text-xs text-white/95 mb-2 font-medium line-clamp-2">{event.description}</p>
                   
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <div className="text-white font-semibold bg-white/40 px-3 py-1.5 rounded-full backdrop-blur-md text-xs">
-                      📅 {event.date} • ⏰ {event.time}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-white font-semibold bg-white/40 px-3 py-1.5 rounded-full backdrop-blur-md text-xs">
-                      <Users className="w-3 h-3" />
-                      <span>{event.registered}/{event.capacity}</span>
+                  <div className="mb-2">
+                    <div className="text-xs text-white font-bold bg-white/40 px-2 py-0.5 rounded-full w-fit backdrop-blur-md">
+                      🎉 GRATIS
                     </div>
                   </div>
-                  
-                  <div className="mb-3">
-                    <div className="text-xs text-white font-extrabold bg-white/40 px-2 py-1 rounded-full w-fit backdrop-blur-md">
-                      🎉 GRATIS Arrangement!
-                  </div>
-                </div>
 
                   <Button
                     size="sm"
-                    variant={isFull ? "outline" : "default"}
-                    disabled={isFull}
-                    className={`w-full font-bold transition-all duration-200`}
-                    style={isFull ? {
+                    variant={isFull && !isRegistered ? "outline" : "default"}
+                    disabled={isFull && !isRegistered}
+                    onClick={handleToggleRegistration}
+                    className={`w-full font-bold transition-all duration-200 text-sm py-1.5`}
+                    style={isFull && !isRegistered ? {
                       backgroundColor: 'rgba(255, 255, 255, 0.2)',
                       color: 'white',
                       borderColor: 'rgba(255, 255, 255, 0.4)',
                       backdropFilter: 'blur(10px)'
+                    } : isRegistered ? {
+                      backgroundColor: '#EF4444',
+                      color: 'white',
+                      border: 'none',
+                      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)'
                     } : {
-                      background: 'white',
-                      color: '#006C75',
-                      border: 'none'
+                      backgroundColor: 'white',
+                      color: '#000000',
+                      border: 'none',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
                     }}
                   >
-                    {isFull ? '❌ Fullt' : <><UserPlus className="w-4 h-4 mr-1" />Meld deg på!</>}
+                    {isFull && !isRegistered ? (
+                      '❌ Fullt'
+                    ) : isRegistered ? (
+                      <><UserMinus className="w-3.5 h-3.5 mr-1" />Meld av</>
+                    ) : (
+                      <><UserPlus className="w-3.5 h-3.5 mr-1" />Meld deg på!</>
+                    )}
                   </Button>
                   
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between mb-1">
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-0.5">
                       <span className="text-xs font-semibold text-white/90">Påmelding</span>
                       <span className="text-xs font-bold text-white">{Math.round(fillPercentage)}%</span>
                     </div>
-                    <div className="w-full bg-white/30 rounded-full h-2 backdrop-blur-sm">
+                    <div className="w-full bg-white/30 rounded-full h-1.5 backdrop-blur-sm">
                       <div 
                         className="h-full rounded-full transition-all"
                         style={{ 
@@ -389,9 +416,9 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
                           width: `${fillPercentage}%`
                         }}
                       />
-                </div>
-              </div>
-            </Card>
+                    </div>
+                  </div>
+                </Card>
               )
             })}
         </div>
@@ -494,7 +521,14 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
               <Button
                 variant={canAfford ? "default" : "outline"}
                 disabled={!canAfford}
-                onClick={() => onRedeemCoupon(coupon._id, coupon.cost)}
+                onClick={() => {
+                  setRedeemedCoupon({
+                    coupon: coupon,
+                    cost: coupon.cost,
+                    newBalance: currentPoints - coupon.cost
+                  })
+                  onRedeemCoupon(coupon._id, coupon.cost)
+                }}
                 className={`w-full font-bold py-3 text-base transition-all duration-200 ${
                   canAfford ? 'active:scale-[0.98]' : ''
                 }`}
@@ -507,13 +541,105 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
                   borderColor: 'rgba(0, 167, 179, 0.3)'
                 }}
               >
-                {canAfford ? '✨ Innløs Nå' : currentPoints < coupon.cost ? `💸 Trenger ${coupon.cost - currentPoints} flere poeng` : '❌ Utsolgt'}
+                {canAfford ? 'Innløs Nå' : currentPoints < coupon.cost ? `Trenger ${coupon.cost - currentPoints} flere poeng` : '❌ Utsolgt'}
               </Button>
               </Card>
             )
           })}
         </div>
       </div>
+
+      {/* Coupon Redemption Confirmation Modal */}
+      <Dialog open={redeemedCoupon !== null} onOpenChange={(open) => !open && setRedeemedCoupon(null)}>
+        <DialogContent className="max-w-md" style={{ borderRadius: '20px' }}>
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="p-4 rounded-full" style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>
+                <CheckCircle2 className="w-12 h-12 text-white" />
+              </div>
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center" style={{ color: '#006C75' }}>
+              Kupong Innløst! 🎉
+            </DialogTitle>
+          </DialogHeader>
+          
+          {redeemedCoupon && (
+            <div className="space-y-4 mt-4">
+              {/* Coupon Details */}
+              <Card className="p-4 border-2" style={{ 
+                background: 'linear-gradient(135deg, #E8F6F6, rgba(0, 167, 179, 0.1))', 
+                borderColor: 'rgba(0, 167, 179, 0.3)',
+                borderRadius: '16px'
+              }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-4xl">{redeemedCoupon.coupon.emoji}</span>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-lg" style={{ color: '#006C75' }}>
+                      {redeemedCoupon.coupon.title}
+                    </h3>
+                    <Badge className="mt-1 text-xs" style={{ 
+                      background: 'linear-gradient(135deg, #00A7B3, #00C4D4)', 
+                      color: 'white',
+                      border: 'none'
+                    }}>
+                      {redeemedCoupon.coupon.category}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>
+                  {redeemedCoupon.coupon.description}
+                </p>
+              </Card>
+
+              {/* Points Information */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#FFE8CC' }}>
+                  <span className="font-semibold" style={{ color: '#006C75' }}>Poeng trukket:</span>
+                  <div className="flex items-center gap-1">
+                    <Coins className="w-5 h-5" style={{ color: '#F59E0B' }} />
+                    <span className="font-bold text-lg" style={{ color: '#F59E0B' }}>
+                      -{redeemedCoupon.cost}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: '#B2E5E8' }}>
+                  <span className="font-semibold" style={{ color: '#006C75' }}>Ny saldo:</span>
+                  <div className="flex items-center gap-1">
+                    <Coins className="w-5 h-5" style={{ color: '#00A7B3' }} />
+                    <span className="font-bold text-lg" style={{ color: '#00A7B3' }}>
+                      {redeemedCoupon.newBalance}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="p-4 rounded-lg border-2" style={{ 
+                backgroundColor: '#FFF9E6',
+                borderColor: '#FBBE9E',
+                borderRadius: '12px'
+              }}>
+                <p className="text-sm font-semibold text-center" style={{ color: '#006C75' }}>
+                   Vis denne skjermen til kafeteriapersonellet
+                </p>
+              </div>
+
+              {/* Close Button */}
+              <Button
+                onClick={() => setRedeemedCoupon(null)}
+                className="w-full font-bold py-3 text-base"
+                style={{
+                  background: 'linear-gradient(135deg, #006C75, #00A7B3)',
+                  color: 'white',
+                  border: 'none'
+                }}
+              >
+                Lukk
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
     </div>
   )

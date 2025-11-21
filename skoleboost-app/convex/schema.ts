@@ -38,13 +38,13 @@ export default defineSchema({
   }),
 
   scheduleItems: defineTable({
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")), // Optional - null means global schedule for all students
     subject: v.string(),
     teacher: v.optional(v.string()),
     time: v.string(),
     room: v.string(),
     points: v.number(),
-    attended: v.boolean(),
+    attended: v.optional(v.boolean()), // Deprecated - use attendance table instead
     day: v.string(),
     type: v.union(v.literal("class"), v.literal("event"), v.literal("trip")),
     description: v.optional(v.string()),
@@ -53,7 +53,7 @@ export default defineSchema({
     capacity: v.optional(v.number()),
     registered: v.optional(v.number()),
     isRegistered: v.optional(v.boolean()),
-  }).index("by_user", ["userId"]).index("by_user_day", ["userId", "day"]),
+  }).index("by_user", ["userId"]).index("by_user_day", ["userId", "day"]).index("by_day", ["day"]),
 
   couponRedemptions: defineTable({
     userId: v.id("users"),
@@ -99,12 +99,12 @@ export default defineSchema({
 
   attendance: defineTable({
     studentId: v.id("users"),
-    classId: v.id("classes"),
+    classId: v.optional(v.id("classes")),
     scheduleItemId: v.optional(v.id("scheduleItems")),
     date: v.string(),
     status: v.union(v.literal("present"), v.literal("late"), v.literal("absent")),
-    markedBy: v.id("users"),
+    markedBy: v.optional(v.id("users")), // Optional for self-marked attendance
     markedAt: v.number(),
-  }).index("by_student", ["studentId"]).index("by_class", ["classId"]).index("by_date", ["date"]),
+  }).index("by_student", ["studentId"]).index("by_class", ["classId"]).index("by_date", ["date"]).index("by_student_schedule", ["studentId", "scheduleItemId", "date"]),
 });
 
