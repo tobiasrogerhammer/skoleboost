@@ -85,30 +85,86 @@ export function TeacherSchedulePage() {
   const currentDayName = getDayName()
 
   return (
-    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-4">
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-4" style={{ paddingTop: '2.5rem' }}>
       {/* Header */}
-      <div className="text-center mb-4 mt-6">
+      <div className="text-center mb-4">
         <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>Min Timeplan</h1>
         <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Oversikt over alle timer 📚</p>
       </div>
 
       {/* Day Selector */}
-      <Card className="p-3 border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
-        <div className="flex items-center gap-3">
-          <label className="text-sm font-semibold" style={{ color: '#006C75' }}>Velg dag:</label>
-          <Select value={selectedDay} onValueChange={setSelectedDay}>
-            <SelectTrigger className="flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {daysOfWeek.map((day) => (
-                <SelectItem key={day} value={day}>
-                  {day}
-                  {day === currentDayName && ' (I dag)'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <Card className="p-4 border-2 shadow-lg" style={{ 
+        background: 'linear-gradient(135deg, rgba(232, 165, 255, 0.05), #F9F0FF, rgba(232, 165, 255, 0.05))', 
+        borderColor: 'rgba(232, 165, 255, 0.3)', 
+        borderRadius: '16px',
+        boxShadow: '0 4px 12px rgba(232, 165, 255, 0.1)'
+      }}>
+        <div>
+          <label className="text-xs font-semibold block mb-1" style={{ color: 'rgba(199, 125, 255, 0.7)' }}>Velg dag</label>
+          <div className="flex gap-3 items-center">
+            <div className="p-3 rounded-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #E8A5FF, #C77DFF)' }}>
+              <Calendar className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <Select value={selectedDay} onValueChange={setSelectedDay}>
+                <SelectTrigger 
+                  className="flex-1 font-semibold transition-all duration-200 hover:shadow-md" 
+                  style={{ 
+                    color: '#C77DFF',
+                    backgroundColor: 'white',
+                    borderColor: 'rgba(232, 165, 255, 0.3)',
+                    borderWidth: '2px',
+                    boxShadow: '0 2px 8px rgba(232, 165, 255, 0.15)'
+                  }}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent 
+                  className="bg-white border-2 shadow-xl rounded-lg [&_button[data-slot='select-scroll-up-button']]:hidden [&_button[data-slot='select-scroll-down-button']]:hidden"
+                  style={{ 
+                    borderColor: 'rgba(232, 165, 255, 0.2)',
+                    boxShadow: '0 8px 24px rgba(232, 165, 255, 0.2)'
+                  }}
+                >
+                  {daysOfWeek.map((day, index) => {
+                    const isToday = day === currentDayName
+                    return (
+                      <SelectItem 
+                        key={day} 
+                        value={day}
+                        className="transition-all duration-150 cursor-pointer"
+                        style={{ 
+                          color: isToday ? '#E8A5FF' : '#C77DFF',
+                          backgroundColor: 'white',
+                          fontWeight: isToday ? '600' : '500',
+                          borderBottom: index < daysOfWeek.length - 1 ? '1px solid rgba(232, 165, 255, 0.25)' : 'none',
+                          padding: '10px 16px',
+                          margin: '0'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isToday ? 'rgba(232, 165, 255, 0.1)' : 'rgba(232, 165, 255, 0.05)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'white'
+                        }}
+                      >
+                        <span className="flex items-center justify-between w-full gap-2">
+                          <span>{day}</span>
+                          {isToday && (
+                            <span 
+                              className="flex-shrink-0 w-2 h-2 rounded-full" 
+                              style={{ backgroundColor: '#E8A5FF' }}
+                              title="I dag"
+                            />
+                          )}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </Card>
 

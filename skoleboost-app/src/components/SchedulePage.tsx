@@ -549,7 +549,7 @@ export function SchedulePage() {
   // Show loading state while setting up schedule
   if (scheduleData === undefined || (scheduleData.length === 0 && isSettingUp)) {
     return (
-      <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-6">
+      <div className="pb-20 px-4 max-w-md mx-auto space-y-6" style={{ paddingTop: '2.5rem' }}>
         <div className="text-center mb-8">
           <div className="inline-block mb-3 p-3 rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.1), rgba(232, 246, 246, 0.5))' }}>
             <span className="text-4xl">📚</span>
@@ -562,101 +562,19 @@ export function SchedulePage() {
   }
 
   return (
-    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-6">
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-6" style={{ paddingTop: '2.5rem' }}>
+      <style>{`
+        [data-slot="select-content"] [data-slot="select-item"] > span.absolute,
+        [data-slot="select-content"] [data-slot="select-item"] svg,
+        [data-slot="select-content"] [data-slot="select-item"] [data-radix-select-item-indicator] {
+          display: none !important;
+        }
+      `}</style>
       {/* Enhanced Header */}
       <div className="text-center mb-6">
         <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>Din Timeplan</h1>
         <p className="text-sm font-medium mb-1" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Følg oppmøte og tjen poeng! 💪</p>
       </div>
-
-      {/* Day Selector */}
-      <Card className="p-4 border-2 shadow-lg" style={{ 
-        background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.05), #E8F6F6, rgba(0, 167, 179, 0.05))', 
-        borderColor: 'rgba(0, 167, 179, 0.3)', 
-        borderRadius: '16px',
-        boxShadow: '0 4px 12px rgba(0, 167, 179, 0.1)'
-      }}>
-        <div>
-          <label className="text-xs font-semibold block mb-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Velg dag</label>
-          <div className="flex gap-3 items-center">
-            <div className="p-3 rounded-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }}>
-              <Calendar className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1">
-              <Select value={selectedDay} onValueChange={setSelectedDay}>
-              <SelectTrigger 
-                className="flex-1 font-semibold transition-all duration-200 hover:shadow-md" 
-                style={{ 
-                  color: '#006C75',
-                  backgroundColor: 'white',
-                  borderColor: 'rgba(0, 167, 179, 0.3)',
-                  borderWidth: '2px',
-                  boxShadow: '0 2px 8px rgba(0, 167, 179, 0.15)'
-                }}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent 
-                className="bg-white border-2 shadow-xl rounded-lg [&_button[data-slot='select-scroll-up-button']]:hidden [&_button[data-slot='select-scroll-down-button']]:hidden"
-                style={{ 
-                  borderColor: 'rgba(0, 167, 179, 0.2)',
-                  boxShadow: '0 8px 24px rgba(0, 167, 179, 0.2)'
-                }}
-              >
-                {daysOfWeek.map((day) => {
-                  const isToday = day === currentDayName
-                  return (
-                    <SelectItem 
-                      key={day} 
-                      value={day}
-                      className="transition-all duration-150 cursor-pointer"
-                      style={{ 
-                        color: isToday ? '#00A7B3' : '#006C75',
-                        backgroundColor: 'white',
-                        fontWeight: isToday ? '600' : '500'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = isToday ? 'rgba(0, 167, 179, 0.1)' : 'rgba(0, 167, 179, 0.05)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'white'
-                      }}
-                    >
-                      <span className="flex items-center gap-2">
-                        {day}
-                        {isToday && <span className="text-xs font-semibold" style={{ color: '#00A7B3' }}>(I dag)</span>}
-                      </span>
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-        {scheduleData.length === 0 && (
-          <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(0, 167, 179, 0.2)' }}>
-            <Button
-              onClick={async () => {
-                setIsSettingUp(true)
-                try {
-                  await setupScheduleMutation()
-                  toast.success('Timeplan opprettet! 📚')
-                } catch (error: any) {
-                  console.error('Error setting up schedule:', error)
-                  toast.error('Kunne ikke opprette timeplan')
-                  setIsSettingUp(false)
-                }
-              }}
-              disabled={isSettingUp}
-              className="w-full"
-              style={{ backgroundColor: '#00A7B3', color: 'white' }}
-            >
-              {isSettingUp ? 'Oppretter timeplan...' : 'Sett opp timeplan'}
-            </Button>
-          </div>
-        )}
-      </Card>
 
       {/* Enhanced Selected Day's Stats */}
       <Card className="p-5 border-2 shadow-2xl transition-all duration-300 hover:shadow-3xl" style={{ 
@@ -693,13 +611,115 @@ export function SchedulePage() {
         </div>
       </Card>
 
+      {/* Day Selector */}
+      <Card className="p-4 border-2 shadow-lg" style={{ 
+        background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.05), #E8F6F6, rgba(0, 167, 179, 0.05))', 
+        borderColor: 'rgba(0, 167, 179, 0.3)', 
+        borderRadius: '16px',
+        boxShadow: '0 4px 12px rgba(0, 167, 179, 0.1)'
+      }}>
+        <div>
+          <label className="text-xs font-semibold block mb-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Velg dag</label>
+          <div className="flex gap-3 items-center">
+            <div className="p-3 rounded-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }}>
+              <Calendar className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <Select value={selectedDay} onValueChange={setSelectedDay}>
+              <SelectTrigger 
+                className="flex-1 font-semibold transition-all duration-200 hover:shadow-md" 
+                style={{ 
+                  color: '#006C75',
+                  backgroundColor: 'white',
+                  borderColor: 'rgba(0, 167, 179, 0.3)',
+                  borderWidth: '2px',
+                  boxShadow: '0 2px 8px rgba(0, 167, 179, 0.15)'
+                }}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent 
+                className="bg-white border-2 shadow-xl rounded-lg [&_button[data-slot='select-scroll-up-button']]:hidden [&_button[data-slot='select-scroll-down-button']]:hidden [&_[data-slot='select-item']>span.absolute]:!hidden [&_[data-slot='select-item']_svg]:!hidden [&_[data-slot='select-item']_[data-radix-select-item-indicator]]:!hidden"
+                style={{ 
+                  borderColor: 'rgba(0, 167, 179, 0.2)',
+                  boxShadow: '0 8px 24px rgba(0, 167, 179, 0.2)'
+                }}
+              >
+                {daysOfWeek.map((day, index) => {
+                  const isToday = day === currentDayName
+                  const isSelected = day === selectedDay
+                  return (
+                    <SelectItem 
+                      key={day} 
+                      value={day}
+                      className="transition-all duration-150 cursor-pointer [&>span.absolute]:!hidden [&_svg]:!hidden !pr-4"
+                      style={{ 
+                        color: isSelected ? '#00A7B3' : (isToday ? '#00A7B3' : '#006C75'),
+                        backgroundColor: isSelected ? 'rgba(0, 167, 179, 0.1)' : 'white',
+                        fontWeight: isSelected ? '700' : (isToday ? '600' : '500'),
+                        borderLeft: isSelected ? '3px solid #00A7B3' : '3px solid transparent',
+                        borderBottom: index < daysOfWeek.length - 1 ? '1px solid rgba(0, 167, 179, 0.25)' : 'none',
+                        padding: '10px 16px',
+                        margin: '0'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.backgroundColor = isToday ? 'rgba(0, 167, 179, 0.1)' : 'rgba(0, 167, 179, 0.05)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = isSelected ? 'rgba(0, 167, 179, 0.1)' : 'white'
+                      }}
+                    >
+                      <span className="flex items-center justify-between w-full gap-2">
+                        <span>{day}</span>
+                        {isToday && (
+                          <span 
+                            className="flex-shrink-0 w-2 h-2 rounded-full" 
+                            style={{ backgroundColor: '#00A7B3' }}
+                            title="I dag"
+                          />
+                        )}
+                      </span>
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+        {scheduleData.length === 0 && (
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(0, 167, 179, 0.2)' }}>
+            <Button
+              onClick={async () => {
+                setIsSettingUp(true)
+                try {
+                  await setupScheduleMutation()
+                  toast.success('Timeplan opprettet! 📚')
+                } catch (error: any) {
+                  console.error('Error setting up schedule:', error)
+                  toast.error('Kunne ikke opprette timeplan')
+                  setIsSettingUp(false)
+                }
+              }}
+              disabled={isSettingUp}
+              className="w-full"
+              style={{ backgroundColor: '#00A7B3', color: 'white' }}
+            >
+              {isSettingUp ? 'Oppretter timeplan...' : 'Sett opp timeplan'}
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      {/* Subtle Separator */}
+      <div className="mt-4 mb-4">
+        <div className="h-1 w-full rounded-full" style={{ background: 'rgba(0, 167, 179, 0.3)' }}></div>
+      </div>
+
       {/* Enhanced Selected Day's Schedule */}
       <div>
-         <div className="flex items-center gap-2 mb-4">
-           <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, #00C4D4)' }}></div>
-           <h2 className="font-extrabold text-2xl whitespace-nowrap flex-shrink-0" style={{ color: '#006C75' }}>{selectedDay}s Timeplan</h2>
-           <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #00A7B3, #00C4D4)' }}></div>
-         </div>
         {selectedDayItems.length === 0 ? (
           <Card className="p-10 text-center border-2 shadow-lg" style={{ 
             background: 'linear-gradient(135deg, rgba(251, 190, 158, 0.1), rgba(255, 159, 102, 0.05))',
@@ -717,6 +737,19 @@ export function SchedulePage() {
             const isFirstUpcoming = upcoming && upcoming.item._id === item._id && item.type === 'class' && !item.attended
             const IconComponent = getItemIcon(item)
             
+            // Find the last class on the day
+            const isSpecialDay = ['Mandag', 'Tirsdag', 'Torsdag'].includes(selectedDay)
+            let isLastClass = false
+            if (isSpecialDay && item.type === 'class') {
+              // Find the last class in the array
+              for (let i = selectedDayItems.length - 1; i >= 0; i--) {
+                if (selectedDayItems[i].type === 'class') {
+                  isLastClass = (item._id === selectedDayItems[i]._id)
+                  break
+                }
+              }
+            }
+            
             // Calculate color index for non-attended classes to ensure no two consecutive have same color
             let colorIndex: number | undefined = undefined
             if (item.type === 'class' && !item.attended) {
@@ -731,13 +764,20 @@ export function SchedulePage() {
             }
             
             const itemStyle = getItemStyles(item, colorIndex)
+            
+            // Override background for last class on special days
+            let finalBackground = item.type === 'class' && item.attended ? '#F3F4F6' : itemStyle.background
+            if (isLastClass && item.type === 'class' && !item.attended) {
+              // Use a different color for the last class - let's use a different gradient
+              finalBackground = 'linear-gradient(to bottom right, rgba(255, 182, 193, 0.3), #FFE4E6, rgba(255, 182, 193, 0.3))'
+            }
             return (
               <Card 
                 key={item._id} 
                 className={`${item.type === 'class' ? 'p-5' : 'p-4'} border-2 ${itemStyle.className || ''} transition-all duration-300 hover:shadow-xl hover:scale-[1.01] ${isFirstUpcoming ? 'ring-2 ring-offset-2' : ''}`} 
                 style={{ 
-                  background: item.type === 'class' && item.attended ? '#F3F4F6' : itemStyle.background, 
-                  borderColor: item.type === 'class' && item.attended ? '#D1D5DB' : (isFirstUpcoming ? '#00A7B3' : itemStyle.borderColor),
+                  background: finalBackground, 
+                  borderColor: item.type === 'class' && item.attended ? '#D1D5DB' : (isFirstUpcoming ? '#00A7B3' : (isLastClass && item.type === 'class' && !item.attended ? 'rgba(255, 182, 193, 0.5)' : itemStyle.borderColor)),
                   borderRadius: '16px',
                   boxShadow: isFirstUpcoming 
                     ? '0 8px 24px rgba(0, 167, 179, 0.3)' 
@@ -860,9 +900,9 @@ export function SchedulePage() {
       {upcomingEvents.length > 0 && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #E8A5FF, #C77DFF)' }}></div>
+            <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #006C75, #00A7B3)' }}></div>
             <h2 className="font-extrabold text-2xl whitespace-nowrap flex-shrink-0" style={{ color: '#006C75' }}>Kommende Arrangementer</h2>
-            <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #E8A5FF, #C77DFF)' }}></div>
+            <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #006C75, #00A7B3)' }}></div>
           </div>
           <div className="space-y-3">
             {upcomingEvents.map((event: any) => {

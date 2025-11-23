@@ -88,20 +88,23 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
   const studentInfo = getStudentInfo(currentUser)
   
   return (
-    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-2">
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-2" style={{ paddingTop: '2.5rem' }}>
       {/* Enhanced Profile Header */}
-      <Card className="p-5 text-center border-2 shadow-2xl" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '20px', boxShadow: '0 10px 40px rgba(0, 167, 179, 0.3)' }}>
-        <div className="relative mb-3">
-          <div className="w-16 h-16 bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center mx-auto border-2 border-white/60 shadow-2xl transform hover:scale-105 transition-transform duration-300">
-            <User className="w-8 h-8 text-white" />
+      <Card className="p-6 border-2 shadow-xl mt-4" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0, 167, 179, 0.3)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white/60 shadow-lg">
+            <User className="w-7 h-7 text-white" />
           </div>
-        </div>
-        <h2 className="mb-1 text-white font-extrabold text-xl drop-shadow-lg">{studentInfo.name}</h2>
-        <p className="text-white mb-3 font-semibold text-sm">{currentUser?.role === 'student' ? 'Elev' : 'Lærer'}</p>
-        <div className="flex justify-center gap-3 text-xs text-white bg-white/30 px-4 py-2 rounded-full backdrop-blur-md w-fit mx-auto shadow-lg border border-white/30">
-          <span className="font-semibold">{studentInfo.grade}</span>
-          <span>•</span>
-          <span className="font-semibold">Siden {studentInfo.joinDate}</span>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-white font-extrabold text-xl drop-shadow-lg truncate">{studentInfo.name}</h2>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-white text-sm font-semibold">{currentUser?.role === 'student' ? 'Elev' : 'Lærer'}</span>
+              <span className="text-white">•</span>
+              <span className="text-white text-sm font-semibold truncate">{studentInfo.grade}</span>
+              <span className="text-white">•</span>
+              <span className="text-white text-sm font-semibold">Siden {studentInfo.joinDate}</span>
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -145,7 +148,7 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
               <TrendingUp className="w-5 h-5" style={{ color: '#00A7B3' }} />
               Akademisk Statistikk
         </h3>
-            <p className="text-xs font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Din fantastiske fremgang! 📈</p>
+            <p className="text-xs font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Din fantastiske fremgang!</p>
           </div>
         </div>
         <div className="space-y-2">
@@ -162,9 +165,9 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
               <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Månedens Timer</span>
             </div>
             <div className="text-right">
-              <span className="font-extrabold text-lg" style={{ color: '#00A7B3' }}>18/30</span>
+              <span className="font-extrabold text-lg" style={{ color: '#00A7B3' }}>12/30</span>
               <div className="w-16 h-1 rounded-full mt-0.5" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${(18 / 22) * 100}%`, background: 'linear-gradient(to right, #00A7B3, #00C4D4)' }}></div>
+                <div className="h-full rounded-full transition-all" style={{ width: `${(12 / 30) * 100}%`, background: 'linear-gradient(to right, #00A7B3, #00C4D4)' }}></div>
               </div>
             </div>
           </div>
@@ -174,9 +177,9 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
               <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Prestasjoner Oppnådd</span>
             </div>
             <div className="text-right">
-              <span className="font-extrabold text-lg" style={{ color: '#00A7B3' }}>{earnedAchievements.length}/{mockAchievements.length}</span>
+              <span className="font-extrabold text-lg" style={{ color: '#00A7B3' }}> 3/{mockAchievements.length}</span>
               <div className="w-16 h-1 rounded-full mt-0.5" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${(earnedAchievements.length / mockAchievements.length) * 100}%`, background: 'linear-gradient(to right, #00A7B3, #00C4D4)' }}></div>
+                <div className="h-full rounded-full transition-all" style={{ width: `${(3 / 6) * 100}%`, background: 'linear-gradient(to right, #00A7B3, #00C4D4)' }}></div>
               </div>
             </div>
           </div>

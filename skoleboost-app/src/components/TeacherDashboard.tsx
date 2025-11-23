@@ -12,6 +12,7 @@ import { Textarea } from './ui/textarea'
 import { Label } from './ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
+import { Logo } from './Logo'
 
 interface TeacherDashboardProps {
   teacher: any
@@ -164,9 +165,12 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
   }, [todayAttendance])
 
   return (
-    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-4">
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-4" style={{ paddingTop: '2.5rem' }}>
       {/* Header */}
-      <div className="text-center mb-4 mt-6">
+      <div className="text-center mb-4">
+        <div className="flex justify-center mb-1">
+          <Logo size="md" />
+        </div>
         <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>Velkommen tilbake!</h1>
         <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Fortsett å inspirere og lære elevene dine 🚀</p>
       </div>
@@ -292,12 +296,24 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
             {classes.map((cls: any) => (
               <Card
                 key={cls._id}
-                className="p-3 border-2 cursor-pointer transition-all hover:scale-[1.02]"
+                className="p-3 border-2 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
                 style={{
                   borderColor: selectedClass === cls._id ? '#E8A5FF' : 'rgba(232, 165, 255, 0.3)',
                   borderRadius: '12px',
                   backgroundColor: selectedClass === cls._id ? 'rgba(232, 165, 255, 0.1)' : 'white',
                   boxShadow: selectedClass === cls._id ? '0 4px 12px rgba(232, 165, 255, 0.2)' : '0 2px 4px rgba(0, 0, 0, 0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedClass !== cls._id) {
+                    e.currentTarget.style.borderColor = 'rgba(232, 165, 255, 0.5)'
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(232, 165, 255, 0.15)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedClass !== cls._id) {
+                    e.currentTarget.style.borderColor = 'rgba(232, 165, 255, 0.3)'
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)'
+                  }
                 }}
                 onClick={() => {
                   setSelectedClass(cls._id)
@@ -313,6 +329,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                       {cls.name}
                     </span>
                   </div>
+                  <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(232, 165, 255, 0.6)' }} />
                 </div>
               </Card>
             ))}
@@ -398,15 +415,17 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                   </span>
                   <ChevronRight className="w-4 h-4" style={{ color: 'rgba(0, 108, 117, 0.6)' }} />
                 </div>
-              </Card>
+          </Card>
             )}
           </div>
         )}
       </div>
 
 
-      {/* Create Coupon and Event */}
-      <div className="flex flex-row gap-2">
+      {/* Coupons List */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-lg" style={{ color: '#006C75' }}>Kuponger</h2>
         <Button
           size="sm"
           variant="outline"
@@ -414,31 +433,11 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
             setEditingCoupon(null)
             setShowCouponDialog(true)
           }}
-          className="flex items-center justify-center gap-2 flex-1 py-3 min-h-[48px]"
+            className="flex-shrink-0"
           style={{ borderColor: '#00A7B3', color: '#00A7B3' }}
         >
-          <Plus className="w-4 h-4 flex-shrink-0" />
-          <span className="text-sm font-medium">Ny kupong</span>
+            <Plus className="w-4 h-4" />
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            setEditingEvent(null)
-            setShowEventDialog(true)
-          }}
-          className="flex items-center justify-center gap-2 flex-1 py-3 min-h-[48px]"
-          style={{ borderColor: '#E8A5FF', color: '#E8A5FF' }}
-        >
-          <Plus className="w-4 h-4 flex-shrink-0" />
-          <span className="text-sm font-medium">Nytt arrangement</span>
-        </Button>
-      </div>
-
-      {/* Coupons List */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-bold text-lg" style={{ color: '#006C75' }}>Kuponger</h2>
         </div>
         {!couponsQuery || couponsQuery.length === 0 ? (
           <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
@@ -563,6 +562,18 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold text-lg" style={{ color: '#006C75' }}>Arrangementer</h2>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setEditingEvent(null)
+              setShowEventDialog(true)
+            }}
+            className="flex-shrink-0"
+            style={{ borderColor: '#E8A5FF', color: '#E8A5FF' }}
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
         </div>
         {!eventsQuery || eventsQuery.length === 0 ? (
           <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
@@ -590,8 +601,8 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
               const isFull = event.registered >= event.capacity
 
               return (
-                <Card
-                  key={event._id}
+              <Card
+                key={event._id}
                   className="p-3 border-2 transition-all hover:scale-[1.01]"
                   style={{ 
                     background: eventStyle.bg,
@@ -599,19 +610,19 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                     borderRadius: '12px',
                     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
                   }}
-                >
-                  <div className="flex items-start justify-between gap-2">
+              >
+                <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                       <div className="rounded-lg flex-shrink-0" style={{ background: eventStyle.iconBg, padding: '10px' }}>
                         <span className="text-xl">{event.emoji}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-sm mb-1 truncate" style={{ color: '#006C75' }}>
-                          {event.title}
-                        </h4>
+                        {event.title}
+                      </h4>
                         <p className="text-xs mb-2 line-clamp-2" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                          {event.description}
-                        </p>
+                        {event.description}
+                      </p>
                         <div className="flex flex-wrap items-center gap-1.5 mb-2">
                           <span 
                             className="text-xs font-semibold px-2 py-1 rounded-full" 
@@ -633,14 +644,14 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                           >
                             ⏰ {event.time}
                           </span>
-                        </div>
+                      </div>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             <Users className="w-3 h-3" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
                             <span className="text-xs font-semibold" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
                               {event.registered}/{event.capacity}
                             </span>
-                          </div>
+                    </div>
                           <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
                             <div 
                               className="h-full rounded-full transition-all"
@@ -651,31 +662,31 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                                   : eventStyle.iconBg
                               }}
                             />
-                          </div>
+                  </div>
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingEvent(event)
-                          setShowEventDialog(true)
-                        }}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingEvent(event)
+                        setShowEventDialog(true)
+                      }}
                         className="p-1.5"
-                        style={{ color: '#E8A5FF' }}
-                      >
+                      style={{ color: '#E8A5FF' }}
+                    >
                         <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <DeleteEventButton eventId={event._id} />
-                    </div>
+                    </Button>
+                    <DeleteEventButton eventId={event._id} />
                   </div>
-                </Card>
+                </div>
+              </Card>
               )
             })}
             {eventsQuery.length > 3 && (
-              <Card 
+              <Card
                 className="p-3 border-2 transition-all hover:scale-[1.01] cursor-pointer"
                 style={{
                   background: 'linear-gradient(135deg, rgba(232, 165, 255, 0.05), rgba(255, 255, 255, 0.5))',
@@ -1083,18 +1094,18 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div>
               <Label htmlFor="emoji" className="text-sm font-semibold" style={{ color: '#006C75' }}>Emoji</Label>
-              <Input
-                id="emoji"
-                value={emoji}
-                onChange={(e) => setEmoji(e.target.value)}
-                placeholder="🎮"
+            <Input
+              id="emoji"
+              value={emoji}
+              onChange={(e) => setEmoji(e.target.value)}
+              placeholder="🎮"
                 className="mt-1"
-                required
-              />
-            </div>
-            <div>
+              required
+            />
+          </div>
+          <div>
               <Label htmlFor="colorTheme" className="text-sm font-semibold" style={{ color: '#006C75' }}>Farge</Label>
               <Select value={colorTheme} onValueChange={setColorTheme}>
                 <SelectTrigger className="mt-1">
@@ -1249,28 +1260,35 @@ function ClassStudentsDialog({
                               {student.parentName}
                             </span>
                           </div>
-                          {student.parentPhone && (
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-3 h-3" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
-                              <a 
-                                href={`tel:${student.parentPhone}`}
-                                className="text-xs hover:underline" 
-                                style={{ color: '#00A7B3' }}
-                              >
-                                {student.parentPhone}
-                              </a>
-                            </div>
-                          )}
-                          {student.parentEmail && (
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-3 h-3" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
-                              <a 
-                                href={`mailto:${student.parentEmail}`}
-                                className="text-xs hover:underline truncate" 
-                                style={{ color: '#00A7B3' }}
-                              >
-                                {student.parentEmail}
-                              </a>
+                          {(student.parentPhone || student.parentEmail) && (
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {student.parentPhone && (
+                                <div className="flex items-center gap-1.5">
+                                  <Phone className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
+                                  <a 
+                                    href={`tel:${student.parentPhone}`}
+                                    className="text-xs hover:underline" 
+                                    style={{ color: '#00A7B3' }}
+                                  >
+                                    {student.parentPhone}
+                                  </a>
+                                </div>
+                              )}
+                              {student.parentPhone && student.parentEmail && (
+                                <span className="text-xs" style={{ color: 'rgba(0, 108, 117, 0.4)' }}>•</span>
+                              )}
+                              {student.parentEmail && (
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <Mail className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
+                                  <a 
+                                    href={`mailto:${student.parentEmail}`}
+                                    className="text-xs hover:underline truncate" 
+                                    style={{ color: '#00A7B3' }}
+                                  >
+                                    {student.parentEmail}
+                                  </a>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1370,36 +1388,36 @@ function AttendanceDialog({
                 <div className="flex items-center gap-4">
                   <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-green-50 hover:scale-105" style={{ minWidth: '48px' }}>
                     <span className="text-xs font-extrabold text-green-600">M</span>
-                    <input
-                      type="radio"
-                      name={`attendance-${student._id}`}
-                      checked={attendance[student._id] === 'present'}
-                      onChange={() => handleStatusChange(student._id, 'present')}
+                  <input
+                    type="radio"
+                    name={`attendance-${student._id}`}
+                    checked={attendance[student._id] === 'present'}
+                    onChange={() => handleStatusChange(student._id, 'present')}
                       className="w-5 h-5"
                       style={{ accentColor: '#10B981' }}
-                    />
+                  />
                   </label>
                   <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-orange-50 hover:scale-105" style={{ minWidth: '48px' }}>
                     <span className="text-xs font-extrabold text-orange-600">G</span>
-                    <input
-                      type="radio"
-                      name={`attendance-${student._id}`}
-                      checked={attendance[student._id] === 'late'}
-                      onChange={() => handleStatusChange(student._id, 'late')}
+                  <input
+                    type="radio"
+                    name={`attendance-${student._id}`}
+                    checked={attendance[student._id] === 'late'}
+                    onChange={() => handleStatusChange(student._id, 'late')}
                       className="w-5 h-5"
                       style={{ accentColor: '#F97316' }}
-                    />
+                  />
                   </label>
                   <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-red-50 hover:scale-105" style={{ minWidth: '48px' }}>
                     <span className="text-xs font-extrabold text-red-600">U</span>
-                    <input
-                      type="radio"
-                      name={`attendance-${student._id}`}
-                      checked={attendance[student._id] === 'absent'}
-                      onChange={() => handleStatusChange(student._id, 'absent')}
+                  <input
+                    type="radio"
+                    name={`attendance-${student._id}`}
+                    checked={attendance[student._id] === 'absent'}
+                    onChange={() => handleStatusChange(student._id, 'absent')}
                       className="w-5 h-5"
                       style={{ accentColor: '#EF4444' }}
-                    />
+                  />
                   </label>
                 </div>
               </div>

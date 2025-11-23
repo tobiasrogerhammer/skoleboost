@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Coins, ShoppingBag, Star, TrendingUp, Calendar, Users, UserPlus, UserMinus, ChevronRight, CheckCircle2 } from 'lucide-react'
+import { Coins, ShoppingBag, Star, TrendingUp, Calendar, Users, UserPlus, UserMinus, ChevronRight, CheckCircle2, Bell } from 'lucide-react'
 import { Card } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
+import { Logo } from './Logo'
 
 interface Coupon {
   id: string
@@ -135,9 +136,27 @@ const mockSocialEvents: SocialEvent[] = [
   }
 ]
 
+const mockAnnouncements = [
+  {
+    _id: 'ann1',
+    title: 'Foreldremøte tirsdag 21 / 10',
+    content: 'Vi inviterer alle foreldre til foreldremøte tirsdag 21. oktober kl. 18:00',
+    createdAt: Date.now() - 86400000,
+  },
+  {
+    _id: 'ann2',
+    title: 'Elevsamtaler uke 45',
+    content: 'Elevsamtaler for alle klasser vil finne sted i uke 45. Book tid via skoleportalen.',
+    createdAt: Date.now() - 172800000,
+  },
+]
+
 export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPageProps) {
   const coupons = useQuery(api.coupons.getAll) || []
   const socialEvents = useQuery(api.events.getAll) || []
+  const announcementsQuery = useQuery(api.announcements.getAll)
+  // Use mock data if query is undefined or returns empty array
+  const announcements = (announcementsQuery !== undefined && announcementsQuery.length > 0) ? announcementsQuery : mockAnnouncements
   const todayPoints = 15 // Mock today's earned points
   const attendanceRate = 80
   const classesAttended = 12
@@ -169,9 +188,12 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
   }
 
   return (
-    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-4">
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-4" style={{ paddingTop: '2.5rem' }}>
       {/* Enhanced Header */}
-      <div className="text-center mb-4 mt-6">
+      <div className="text-center mb-4">
+        <div className="flex justify-center mb-1">
+          <Logo size="md" />
+        </div>
         <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>{greeting.text}</h1>
         <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Du gjør det bra! Fortsett sånn! 🚀</p>
       </div>
@@ -217,6 +239,51 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
             <Star className="w-4 h-4 text-white fill-white" />
           </div>
         </div>
+        {/* Kunngjøringer */}
+        {announcements.length > 0 && (
+          <div className="mb-2 pb-2 border-b" style={{ borderColor: 'rgba(0, 167, 179, 0.2)' }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Bell className="w-3.5 h-3.5" style={{ color: '#00A7B3' }} />
+              <span className="text-m font-semibold" style={{ color: '#006C75' }}>Kunngjøringer</span>
+            </div>
+            <div className="space-y-1.5">
+              {announcements.slice(0, 2).map((announcement: any) => {
+                const timeAgo = announcement.createdAt 
+                  ? (() => {
+                      const diff = Date.now() - announcement.createdAt
+                      const hours = Math.floor(diff / 3600000)
+                      const days = Math.floor(hours / 24)
+                      if (days > 0) return `${days} ${days === 1 ? 'dag' : 'dager'} siden`
+                      if (hours > 0) return `${hours} ${hours === 1 ? 'time' : 'timer'} siden`
+                      return 'Nylig'
+                    })()
+                  : 'Nylig'
+                
+                return (
+                  <div 
+                    key={announcement._id} 
+                    className="px-2 py-1.5 rounded-lg transition-all hover:scale-[1.01]"
+                    style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)', boxShadow: '0 1px 3px rgba(0, 167, 179, 0.1)' }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-[9px] font-bold mb-0.5 truncate" style={{ color: '#006C75' }}>
+                          {announcement.title}
+                        </h4>
+                        <p className="text-[8px] line-clamp-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                          {announcement.content || announcement.description}
+                        </p>
+                      </div>
+                      <span className="text-[8px] font-medium flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.6)' }}>
+                        {timeAgo}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-2">
           <div className="px-2 py-2 rounded-lg transition-all hover:scale-[1.02]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', boxShadow: '0 2px 6px rgba(0, 167, 179, 0.1)' }}>
             <div className="text-center">

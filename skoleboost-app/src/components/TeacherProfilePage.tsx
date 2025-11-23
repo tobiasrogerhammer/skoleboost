@@ -1,7 +1,7 @@
 import React from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { User, GraduationCap, Users, TrendingUp, Calendar, Award, BookOpen } from 'lucide-react'
+import { User, GraduationCap, Users, TrendingUp, Calendar, Award, BookOpen, Clock, CheckCircle2, Bell, Sparkles } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 
@@ -12,6 +12,35 @@ const mockClasses = [
   { _id: 'class3', name: 'Klasse 9B', grade: '9. trinn', subject: 'Norsk' },
   { _id: 'class4', name: 'Klasse 9C', grade: '9. trinn', subject: 'Norsk' },
 ]
+
+const getMockTodaySchedule = () => {
+  const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
+  const today = days[new Date().getDay()]
+  
+  const schedules: Record<string, any[]> = {
+    'Mandag': [
+      { _id: 's1', subject: 'Norsk', time: '10:45 - 11:30', room: 'Rom 207', day: 'Mandag', type: 'class' },
+      { _id: 's2', subject: 'Norsk', time: '12:15 - 13:00', room: 'Rom 208', day: 'Mandag', type: 'class' },
+    ],
+    'Tirsdag': [
+      { _id: 's3', subject: 'Norsk', time: '09:15 - 10:15', room: 'Rom 201', day: 'Tirsdag', type: 'class' },
+      { _id: 's4', subject: 'Norsk', time: '13:45 - 14:45', room: 'Rom 201', day: 'Tirsdag', type: 'class' },
+    ],
+    'Onsdag': [
+      { _id: 's5', subject: 'Norsk', time: '08:00 - 09:00', room: 'Rom 201', day: 'Onsdag', type: 'class' },
+    ],
+    'Torsdag': [
+      { _id: 's6', subject: 'Norsk', time: '09:15 - 10:15', room: 'Rom 201', day: 'Torsdag', type: 'class' },
+    ],
+    'Fredag': [
+      { _id: 's7', subject: 'Norsk', time: '08:00 - 09:00', room: 'Rom 201', day: 'Fredag', type: 'class' },
+    ],
+    'Lørdag': [],
+    'Søndag': [],
+  }
+  
+  return schedules[today] || []
+}
 
 const mockAnnouncements = [
   {
@@ -39,6 +68,7 @@ export function TeacherProfilePage() {
   const classesQuery = useQuery(api.teachers.getTeacherClasses, {})
   const todayAttendanceQuery = useQuery(api.teachers.getTodayAttendance, {})
   const announcementsQuery = useQuery(api.announcements.getAll, {})
+  const eventsQuery = useQuery(api.events.getAll, {})
 
   // Use mock data if queries return empty or undefined (for demo)
   const teacher = teacherQuery || { name: 'Kari Lærer', email: 'kari@skole.no', role: 'teacher' }
@@ -47,26 +77,39 @@ export function TeacherProfilePage() {
     ? todayAttendanceQuery
     : { present: 24, late: 2, absent: 1, total: 27 }
   const announcements = (announcementsQuery && announcementsQuery.length > 0) ? announcementsQuery : mockAnnouncements
+  const events = (eventsQuery && eventsQuery.length > 0) ? eventsQuery : []
 
   const totalStudents = 27 // Mock total students across all classes
 
   const averageAbsence = todayAttendance.total > 0 
     ? ((todayAttendance.absent / todayAttendance.total) * 100).toFixed(1) 
     : '3.7'
+  
+  // Calculate week's attendance percentage (mock data - in real app, this would come from API)
+  const weekAttendanceRate = 89 // Mock weekly attendance rate
+  
+  // Count upcoming events (events in the future)
+  const upcomingEventsCount = events.filter((event: any) => {
+    // Filter events that are in the future (simplified - in real app would check dates)
+    return true // For now, count all events as upcoming
+  }).length
 
   return (
-    <div className="pb-20 px-4 pt-16 sm:pt-20 max-w-md mx-auto space-y-2">
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-2" style={{ paddingTop: '2.5rem' }}>
       {/* Enhanced Profile Header */}
-      <Card className="p-5 text-center border-2 shadow-2xl" style={{ background: 'linear-gradient(135deg, #E8A5FF 0%, #C77DFF 50%, #E8A5FF 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '20px', boxShadow: '0 10px 40px rgba(232, 165, 255, 0.3)' }}>
-        <div className="relative mb-3">
-          <div className="w-16 h-16 bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center mx-auto border-2 border-white/60 shadow-2xl transform hover:scale-105 transition-transform duration-300">
-            <GraduationCap className="w-8 h-8 text-white" />
+      <Card className="p-6 border-2 shadow-xl mt-4" style={{ background: 'linear-gradient(135deg, #E8A5FF 0%, #C77DFF 50%, #E8A5FF 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(232, 165, 255, 0.3)' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white/60 shadow-lg">
+            <GraduationCap className="w-7 h-7 text-white" />
           </div>
-        </div>
-        <h2 className="mb-1 text-white font-extrabold text-xl drop-shadow-lg">{teacher.name}</h2>
-        <p className="text-white mb-3 font-semibold text-sm">Lærer</p>
-        <div className="flex justify-center gap-3 text-xs text-white bg-white/30 px-4 py-2 rounded-full backdrop-blur-md w-fit mx-auto shadow-lg border border-white/30">
-          <span className="font-semibold">E-post: {teacher.email}</span>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-white font-extrabold text-xl drop-shadow-lg truncate">{teacher.name}</h2>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="text-white/95 text-sm font-semibold">Lærer</span>
+              <span className="text-white/70">•</span>
+              <span className="text-white/95 text-sm font-semibold truncate">{teacher.email}</span>
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -81,10 +124,10 @@ export function TeacherProfilePage() {
           }}
         >
           <div className="flex items-center justify-center">
-            <Users className="w-10 h-10 text-white drop-shadow-lg" />
+            <CheckCircle2 className="w-10 h-10 text-white drop-shadow-lg" />
           </div>
-          <span className="font-extrabold text-white block drop-shadow-lg" style={{ fontSize: '2rem', lineHeight: '1', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{classes.length}</span>
-          <p className="text-sm text-white font-semibold tracking-wide uppercase">Klasser</p>
+          <span className="font-extrabold text-white block drop-shadow-lg" style={{ fontSize: '2rem', lineHeight: '1', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{weekAttendanceRate}%</span>
+          <p className="text-sm text-white font-semibold tracking-wide uppercase">Ukens Oppmøte</p>
         </Card>
         <Card 
           className="px-4 py-1 text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-center gap-2" 
@@ -95,10 +138,10 @@ export function TeacherProfilePage() {
           }}
         >
           <div className="flex items-center justify-center">
-            <TrendingUp className="w-10 h-10 text-white drop-shadow-lg" />
+            <Sparkles className="w-10 h-10 text-white drop-shadow-lg" />
           </div>
-          <span className="font-extrabold text-white block drop-shadow-lg" style={{ fontSize: '2rem', lineHeight: '1', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{todayAttendance.total}</span>
-          <p className="text-xs text-white font-semibold tracking-wide uppercase">Elever</p>
+          <span className="font-extrabold text-white block drop-shadow-lg" style={{ fontSize: '2rem', lineHeight: '1', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{upcomingEventsCount}</span>
+          <p className="text-xs text-white font-semibold tracking-wide uppercase">Arrangementer</p>
         </Card>
       </div>
 

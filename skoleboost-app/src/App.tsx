@@ -12,7 +12,7 @@ import { TeacherProfilePage } from './components/TeacherProfilePage'
 import UserJourneyMap from './UserJourneyMap'
 import AcademicJourneyMap from './AcademicJourneyMap'
 import { toast } from 'sonner'
-import { Map, BookOpen, User, GraduationCap } from 'lucide-react'
+import { Map, BookOpen, User, GraduationCap, School } from 'lucide-react'
 import { Button } from './components/ui/button'
 
 export default function App() {
@@ -283,7 +283,7 @@ function AppContent({
       ) : (
         <>
           <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
-            <div className="absolute top-4 right-4 z-50 flex gap-2">
+            <div className="absolute top-4 right-4 z-50 flex gap-2 items-center">
               {currentUser && <RoleToggle currentUser={currentUser} />}
               <UserButton afterSignOutUrl="/" />
             </div>
@@ -322,7 +322,7 @@ function TeacherAppContent({
   return (
     <>
       <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
-        <div className="absolute top-4 right-4 z-50 flex gap-2">
+        <div className="absolute top-4 right-4 z-50 flex gap-2 items-center">
           <RoleToggle currentUser={teacher} />
           <UserButton afterSignOutUrl="/" />
         </div>
@@ -378,12 +378,12 @@ function RoleToggle({ currentUser }: { currentUser: any }) {
     >
       {isTeacher ? (
         <>
-          <GraduationCap className="size-4" />
+          <School className="size-4" />
           <span className="hidden sm:inline">Lærer</span>
         </>
       ) : (
         <>
-          <User className="size-4" />
+          <GraduationCap className="size-4" />
           <span className="hidden sm:inline">Elev</span>
         </>
       )}
