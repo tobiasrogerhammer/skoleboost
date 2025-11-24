@@ -1,12 +1,15 @@
-import React, { useState } from 'react'
-import { useQuery } from 'convex/react'
+import React, { useState, useMemo } from 'react'
+import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Coins, ShoppingBag, Star, TrendingUp, Calendar, Users, UserPlus, UserMinus, ChevronRight, CheckCircle2, Bell } from 'lucide-react'
+import { Id } from '../../convex/_generated/dataModel'
+import { Coins, ShoppingBag, Star, TrendingUp, Calendar, Users, UserPlus, UserMinus, ChevronRight, ChevronDown, ChevronUp, CheckCircle2, Bell } from 'lucide-react'
 import { Card } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog'
 import { Logo } from './Logo'
+import { EventCard } from './EventCard'
+import { toast } from 'sonner'
 
 interface Coupon {
   id: string
@@ -153,8 +156,44 @@ const mockAnnouncements = [
 
 export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPageProps) {
   const coupons = useQuery(api.coupons.getAll) || []
-  const socialEvents = useQuery(api.events.getAll) || []
+  const socialEventsQuery = useQuery(api.events.getAll) || []
   const announcementsQuery = useQuery(api.announcements.getAll)
+  const registerEventMutation = useMutation(api.events.register)
+  const userRegistrations = useQuery(api.events.getUserRegistrations) || []
+  const registeredEventsSet = useMemo(() => new Set(userRegistrations), [userRegistrations])
+  
+  // Sort events by date
+  const socialEvents = useMemo(() => {
+    const parseDate = (dateStr: string): Date => {
+      // Parse "DD. MMM" format (e.g., "15. okt")
+      const parts = dateStr.split('. ')
+      if (parts.length !== 2) return new Date(0) // Invalid date, put at end
+      
+      const day = parseInt(parts[0], 10)
+      const monthStr = parts[1].toLowerCase()
+      const monthMap: { [key: string]: number } = {
+        'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'jun': 5,
+        'jul': 6, 'aug': 7, 'sep': 8, 'okt': 9, 'nov': 10, 'des': 11
+      }
+      const month = monthMap[monthStr] ?? 0
+      
+      // Events are seeded for 2025 (nov-des), so use 2025 as the year
+      const eventYear = 2025
+      return new Date(eventYear, month, day)
+    }
+    
+    return [...socialEventsQuery].sort((a: any, b: any) => {
+      const dateA = parseDate(a.date || '')
+      const dateB = parseDate(b.date || '')
+      if (dateA.getTime() === dateB.getTime()) {
+        // If same date, sort by time
+        const timeA = a.time || '00:00'
+        const timeB = b.time || '00:00'
+        return timeA.localeCompare(timeB)
+      }
+      return dateA.getTime() - dateB.getTime()
+    })
+  }, [socialEventsQuery])
   // Use mock data if query is undefined or returns empty array
   const announcements = (announcementsQuery !== undefined && announcementsQuery.length > 0) ? announcementsQuery : mockAnnouncements
   const todayPoints = 15 // Mock today's earned points
@@ -162,8 +201,22 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
   const classesAttended = 12
   const totalClasses = 28 // 28 timer per uke (ikke inkludert lunsj)
   const [showAllEvents, setShowAllEvents] = useState(false)
-  const [registeredEvents, setRegisteredEvents] = useState<Set<string>>(new Set())
+  const [showMoreInDialog, setShowMoreInDialog] = useState(false)
   const [redeemedCoupon, setRedeemedCoupon] = useState<{ coupon: any, cost: number, newBalance: number } | null>(null)
+
+  const handleRSVP = async (eventId: string) => {
+    try {
+      // Convert string to Id type for socialEvents
+      const result = await registerEventMutation({ 
+        eventId: eventId as any as Id<'socialEvents'>
+      })
+      toast.success(result.registered ? 'Påmeldt arrangement!' : 'Avmeldt fra arrangement')
+      // The query will automatically refetch and update registeredEventsSet
+    } catch (error: any) {
+      console.error('RSVP error:', error)
+      toast.error(error.message || 'Noe gikk galt')
+    }
+  }
   
   // Time-based greeting
   const getGreeting = () => {
@@ -182,26 +235,27 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
         return { bg: 'linear-gradient(to bottom right, #4ECDC4, #44A08D, #4ECDC4)', border: 'rgba(78, 205, 196, 0.5)' }
       case 'pink':
         return { bg: 'linear-gradient(to bottom right, #FF6B9D, #FF8E9B, #FF6B9D)', border: 'rgba(255, 107, 157, 0.5)' }
+      case 'purple':
+        return { bg: 'linear-gradient(to bottom right, #E8A5FF, #C77DFF, #E8A5FF)', border: 'rgba(232, 165, 255, 0.5)' }
+      case 'orange':
+        return { bg: 'linear-gradient(to bottom right, #FBBE9E, #FF9F66, #FBBE9E)', border: 'rgba(251, 190, 158, 0.5)' }
       default:
-        return { bg: 'linear-gradient(to bottom right, #E8F6F6, rgba(0, 167, 179, 0.2))', border: 'rgba(0, 167, 179, 0.3)' }
+        return { bg: 'linear-gradient(to bottom right, #00A7B3, #00C4D4, #00A7B3)', border: 'rgba(0, 167, 179, 0.5)' }
     }
   }
 
   return (
-    <div className="pb-20 px-4 max-w-md mx-auto space-y-4" style={{ paddingTop: '2.5rem' }}>
-      {/* Enhanced Header */}
-      <div className="text-center mb-4">
-        <div className="flex justify-center mb-1">
-          <Logo size="md" />
-        </div>
-        <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>{greeting.text}</h1>
-        <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Du gjør det bra! Fortsett sånn! 🚀</p>
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-4 relative" style={{ paddingTop: '2.5rem' }}>
+      {/* Logo and Brand Name - Top Left */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <Logo size="xs" />
+        <h1 className="font-bold text-base" style={{ color: '#006C75' }}>Skoleboost</h1>
       </div>
 
       {/* Enhanced Points Summary */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 mt-8">
         <Card 
-          className="px-4 py-1 text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-center gap-2" 
+          className="px-4 py-1 text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-center gap-1" 
           style={{ 
             background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', 
             border: '3px solid rgba(255, 255, 255, 0.3)',
@@ -211,7 +265,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
           <div className="flex items-center justify-center">
             <Coins className="w-10 h-10 text-white drop-shadow-lg" />
           </div>
-          <span className="font-extrabold text-white block drop-shadow-lg" style={{ fontSize: '2rem', lineHeight: '1', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{currentPoints}</span>
+          <span className="font-extrabold text-white block drop-shadow-lg" style={{ fontSize: '1.6rem', lineHeight: '1', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>{currentPoints}</span>
           <p className="text-sm text-white font-semibold tracking-wide uppercase">Nåværende Poeng</p>
         </Card>
 
@@ -226,27 +280,53 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
           <div className="flex items-center justify-center">
             <TrendingUp className="w-10 h-10 text-white drop-shadow-lg" />
           </div>
-          <span className="font-extrabold text-white block drop-shadow-lg" style={{ fontSize: '2rem', lineHeight: '1', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>+{todayPoints}</span>
+          <span className="font-extrabold text-white block drop-shadow-lg" style={{ fontSize: '1.6rem', lineHeight: '1', textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>+{todayPoints}</span>
           <p className="text-sm text-white font-semibold tracking-wide uppercase">Dagens Poeng</p>
         </Card>
       </div>
 
       {/* Enhanced Progress Stats - Compact Design */}
-      <Card className="p-3 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.08), #E8F6F6, rgba(0, 167, 179, 0.08))', border: '2px solid rgba(0, 167, 179, 0.3)', borderRadius: '20px' }}>
-        <div className="flex items-center justify-between">
+      <Card className="p-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.08), #E8F6F6, rgba(0, 167, 179, 0.08))', border: '2px solid rgba(0, 167, 179, 0.3)', borderRadius: '20px' }}>
+        <div className="flex items-center justify-between px-3 mt-2 mb-0">
           <h3 className="font-bold text-base" style={{ color: '#006C75' }}>Ukens Fremgang</h3>
-          <div className="p-3 rounded-xl shadow-md animate-pulse" style={{ background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}>
+          <div className="rounded-lg shadow-md animate-pulse" style={{ background: 'linear-gradient(135deg, #FFD700, #FFA500)', padding: '6px' }}>
             <Star className="w-4 h-4 text-white fill-white" />
+          </div>
+        </div>
+        <div className="grid grid-cols-3 px-2 gap-1.5" style={{ marginTop: '-6px' }}>
+          <div className="px-2 py-2 rounded-lg transition-all hover:scale-[1.02]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', boxShadow: '0 2px 6px rgba(0, 167, 179, 0.1)' }}>
+            <div className="text-center">
+              <div className="text-xs font-medium mb-0.5" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Totale Poeng</div>
+              <div className="font-extrabold text-base" style={{ color: '#00A7B3' }}>{totalEarned}</div>
+            </div>
+          </div>
+          <div className="px-2 py-2 rounded-lg transition-all hover:scale-[1.02]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', boxShadow: '0 2px 6px rgba(0, 167, 179, 0.1)' }}>
+            <div className="text-center">
+              <div className="text-xs font-medium mb-0.5" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Timer</div>
+              <div className="font-extrabold text-base mb-0.5" style={{ color: '#00A7B3' }}>{classesAttended}/{totalClasses}</div>
+              <div className="w-full h-1 rounded-full" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)' }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${(classesAttended / totalClasses) * 100}%`, background: 'linear-gradient(to right, #00A7B3, #00C4D4)' }}></div>
+              </div>
+            </div>
+          </div>
+          <div className="px-2 py-2 rounded-lg transition-all hover:scale-[1.02]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', boxShadow: '0 2px 6px rgba(0, 167, 179, 0.1)' }}>
+            <div className="text-center">
+              <div className="text-xs font-medium mb-0.5" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Oppmøte</div>
+              <div className="font-extrabold text-base mb-0.5" style={{ color: '#00A7B3' }}>{attendanceRate}%</div>
+              <div className="w-full h-1 rounded-full" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)' }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${attendanceRate}%`, background: 'linear-gradient(to right, #00A7B3, #00C4D4)' }}></div>
+              </div>
+            </div>
           </div>
         </div>
         {/* Kunngjøringer */}
         {announcements.length > 0 && (
-          <div className="mb-2 pb-2 border-b" style={{ borderColor: 'rgba(0, 167, 179, 0.2)' }}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <Bell className="w-3.5 h-3.5" style={{ color: '#00A7B3' }} />
-              <span className="text-m font-semibold" style={{ color: '#006C75' }}>Kunngjøringer</span>
+          <div className="mb-1 pb-1 px-2 border-b" style={{ borderColor: 'rgba(0, 167, 179, 0.2)', marginTop: '-8px' }}>
+            <div className="flex items-center gap-1 mb-2">
+              <Bell className="w-3 h-3" style={{ color: '#00A7B3' }} />
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Kunngjøringer</span>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {announcements.slice(0, 2).map((announcement: any) => {
                 const timeAgo = announcement.createdAt 
                   ? (() => {
@@ -262,19 +342,19 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
                 return (
                   <div 
                     key={announcement._id} 
-                    className="px-2 py-1.5 rounded-lg transition-all hover:scale-[1.01]"
+                    className="px-1 py-1 rounded-lg transition-all hover:scale-[1.01]"
                     style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)', boxShadow: '0 1px 3px rgba(0, 167, 179, 0.1)' }}
                   >
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-1 px-2">
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-[9px] font-bold mb-0.5 truncate" style={{ color: '#006C75' }}>
+                        <h4 className="font-bold mb-0.5 truncate" style={{ color: '#006C75', fontSize: '12px' }}>
                           {announcement.title}
                         </h4>
-                        <p className="text-[8px] line-clamp-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                        <p className="line-clamp-1" style={{ color: 'rgba(0, 108, 117, 0.7)', fontSize: '11px' }}>
                           {announcement.content || announcement.description}
                         </p>
                       </div>
-                      <span className="text-[8px] font-medium flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.6)' }}>
+                      <span className="font-medium flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.6)', fontSize: '11px' }}>
                         {timeAgo}
                       </span>
                     </div>
@@ -284,32 +364,6 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
             </div>
           </div>
         )}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="px-2 py-2 rounded-lg transition-all hover:scale-[1.02]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', boxShadow: '0 2px 6px rgba(0, 167, 179, 0.1)' }}>
-            <div className="text-center">
-              <div className="text-xs font-medium mb-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Totale Poeng</div>
-              <div className="font-extrabold text-lg" style={{ color: '#00A7B3' }}>{totalEarned}</div>
-            </div>
-          </div>
-          <div className="px-2 py-2 rounded-lg transition-all hover:scale-[1.02]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', boxShadow: '0 2px 6px rgba(0, 167, 179, 0.1)' }}>
-            <div className="text-center">
-              <div className="text-xs font-medium mb-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Timer</div>
-              <div className="font-extrabold text-lg mb-1" style={{ color: '#00A7B3' }}>{classesAttended}/{totalClasses}</div>
-              <div className="w-full h-1 rounded-full" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${(classesAttended / totalClasses) * 100}%`, background: 'linear-gradient(to right, #00A7B3, #00C4D4)' }}></div>
-              </div>
-            </div>
-          </div>
-          <div className="px-2 py-2 rounded-lg transition-all hover:scale-[1.02]" style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', boxShadow: '0 2px 6px rgba(0, 167, 179, 0.1)' }}>
-            <div className="text-center">
-              <div className="text-xs font-medium mb-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Oppmøte</div>
-              <div className="font-extrabold text-lg mb-1" style={{ color: '#00A7B3' }}>{attendanceRate}%</div>
-              <div className="w-full h-1 rounded-full" style={{ backgroundColor: 'rgba(0, 167, 179, 0.2)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${attendanceRate}%`, background: 'linear-gradient(to right, #00A7B3, #00C4D4)' }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
       </Card>
 
       {/* Social Events Preview Card */}
@@ -329,166 +383,110 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
                 <Calendar className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-sm mb-0.5" style={{ color: '#006C75' }}>Kommende Arrangementer</h3>
+                <h3 className="font-bold text-sm" style={{ color: '#006C75' }}>Kommende Arrangementer</h3>
                 <p className="text-xs font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
                   {socialEvents.length} {socialEvents.length !== 1 ? 'arrangement' : 'arrangement'} kommer
                 </p>
               </div>
             </div>
             <ChevronRight className="w-4 h-4" style={{ color: 'rgba(0, 108, 117, 0.6)' }} />
-        </div>
+          </div>
 
-            {/* Preview of first three events */}
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {socialEvents.slice(0, 3).map((event: any, index: number) => {
+          {/* Preview of first three events */}
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            {socialEvents.slice(0, 3).map((event: any, index: number) => {
               const eventStyle = getEventStyles(event.colorTheme)
-                return (
-                  <div
-                    key={event._id}
-                    className="p-1.5 rounded-lg border flex flex-col items-center text-center"
-                    style={{
-                      background: eventStyle.bg,
-                      borderColor: eventStyle.border,
-                      minHeight: '70px'
+              return (
+                <div
+                  key={event._id}
+                  className="p-1.5 rounded-lg border flex flex-col items-center text-center"
+                  style={{
+                    background: eventStyle.bg,
+                    borderColor: eventStyle.border,
+                    minHeight: '70px'
+                  }}
+                >
+                  <span className="text-lg mb-0.5">{event.emoji}</span>
+                  <h4 
+                    className="font-bold text-xs mb-0.5 text-white drop-shadow-sm" 
+                    style={{ 
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      lineHeight: '1.2'
                     }}
                   >
-                    <span className="text-lg mb-0.5">{event.emoji}</span>
-                    <h4 
-                      className="font-bold text-xs mb-0.5 text-white drop-shadow-sm" 
-                      style={{ 
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        lineHeight: '1.2'
-                      }}
-                    >
-                      {event.title}
-                    </h4>
-                    <p className="text-xs font-medium text-white/90 drop-shadow-sm">{event.date}</p>
-                  </div>
-                )
+                    {event.title}
+                  </h4>
+                  <p className="text-xs font-medium text-white/90 drop-shadow-sm">{event.date}</p>
+                </div>
+              )
             })}
           </div>
         </Card>
       )}
 
       {/* All Events Dialog */}
-      <Dialog open={showAllEvents} onOpenChange={setShowAllEvents}>
+      <Dialog open={showAllEvents} onOpenChange={(open) => {
+        setShowAllEvents(open)
+        if (!open) setShowMoreInDialog(false) // Reset when dialog closes
+      }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Sosiale Arrangementer & Utflukter 🎉</DialogTitle>
+            <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Sosiale Arrangementer 🎉</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 mt-4">
-            {socialEvents.map((event: any) => {
-              const eventStyle = getEventStyles(event.colorTheme)
-              const isRegistered = registeredEvents.has(event._id)
-              const currentRegistered = isRegistered ? event.registered + 1 : event.registered
-              const isFull = currentRegistered >= event.capacity
-              const fillPercentage = (currentRegistered / event.capacity) * 100
-
-              const handleToggleRegistration = () => {
-                setRegisteredEvents(prev => {
-                  const newSet = new Set(prev)
-                  if (newSet.has(event._id)) {
-                    newSet.delete(event._id)
-                  } else {
-                    newSet.add(event._id)
-                  }
-                  return newSet
-                })
-              }
-
+            {(showMoreInDialog ? socialEvents : socialEvents.slice(0, 5)).map((event: any) => {
+              const eventIdString = typeof event._id === 'string' ? event._id : event._id.toString()
               return (
-                <Card 
-                  key={event._id} 
-                  className="p-3 border-2" 
-                  style={{ 
-                    background: eventStyle.bg, 
-                    borderColor: eventStyle.border,
-                    borderRadius: '12px'
+                <EventCard
+                  key={event._id}
+                  event={{
+                    _id: event._id,
+                    title: event.title,
+                    description: event.description,
+                    date: event.date,
+                    time: event.time,
+                    emoji: event.emoji,
+                    colorTheme: event.colorTheme,
+                    capacity: event.capacity,
+                    registered: event.registered,
+                    isRegistered: registeredEventsSet.has(eventIdString),
                   }}
-                >
-                  <div className="flex items-start gap-2 mb-2">
-                    <span className="text-2xl flex-shrink-0">{event.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-white font-bold text-base mb-1 drop-shadow-lg line-clamp-1">{event.title}</h4>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <Badge className="text-xs bg-white/40 text-white border-white/50 backdrop-blur-md font-bold px-1.5 py-0.5">
-                          {event.date}
-                        </Badge>
-                        <div className="text-white font-semibold bg-white/40 px-2 py-0.5 rounded-full backdrop-blur-md text-xs">
-                          ⏰ {event.time}
-                        </div>
-                        <div className="flex items-center gap-1 text-white font-semibold bg-white/40 px-2 py-0.5 rounded-full backdrop-blur-md text-xs">
-                          <Users className="w-3 h-3" />
-                          <span>{currentRegistered}/{event.capacity}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-xs text-white/95 mb-2 font-medium line-clamp-2">{event.description}</p>
-                  
-                  <div className="mb-2">
-                    <div className="text-xs text-white font-bold bg-white/40 px-2 py-0.5 rounded-full w-fit backdrop-blur-md">
-                      🎉 GRATIS
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    variant={isFull && !isRegistered ? "outline" : "default"}
-                    disabled={isFull && !isRegistered}
-                    onClick={handleToggleRegistration}
-                    className={`w-full font-bold transition-all duration-200 text-sm py-1.5`}
-                    style={isFull && !isRegistered ? {
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                      color: 'white',
-                      borderColor: 'rgba(255, 255, 255, 0.4)',
-                      backdropFilter: 'blur(10px)'
-                    } : isRegistered ? {
-                      backgroundColor: '#EF4444',
-                      color: 'white',
-                      border: 'none',
-                      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)'
-                    } : {
-                      backgroundColor: 'white',
-                      color: '#000000',
-                      border: 'none',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-                    }}
-                  >
-                    {isFull && !isRegistered ? (
-                      '❌ Fullt'
-                    ) : isRegistered ? (
-                      <><UserMinus className="w-3.5 h-3.5 mr-1" />Meld av</>
-                    ) : (
-                      <><UserPlus className="w-3.5 h-3.5 mr-1" />Meld deg på!</>
-                    )}
-                  </Button>
-                  
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-xs font-semibold text-white/90">Påmelding</span>
-                      <span className="text-xs font-bold text-white">{Math.round(fillPercentage)}%</span>
-                    </div>
-                    <div className="w-full bg-white/30 rounded-full h-1.5 backdrop-blur-sm">
-                      <div 
-                        className="h-full rounded-full transition-all"
-                        style={{ 
-                          background: isFull 
-                            ? 'linear-gradient(90deg, #FF6B6B, #FF8E8E)' 
-                            : 'linear-gradient(90deg, white, rgba(255, 255, 255, 0.8))',
-                          width: `${fillPercentage}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-                </Card>
+                  eventType="socialEvent"
+                  onRSVP={handleRSVP}
+                  registeredEvents={registeredEventsSet}
+                />
               )
             })}
-        </div>
+          </div>
+          {socialEvents.length > 5 && (
+            <Button
+              onClick={() => setShowMoreInDialog(!showMoreInDialog)}
+              className="w-full mt-4 flex items-center justify-center gap-2 hover:bg-opacity-10 transition-all"
+              style={{
+                background: 'transparent',
+                color: '#006C75',
+                border: '2px solid rgba(0, 108, 117, 0.3)',
+                borderRadius: '12px',
+                padding: '12px',
+                fontWeight: '600'
+              }}
+            >
+              {showMoreInDialog ? (
+                <>
+                  <ChevronUp className="w-5 h-5" />
+                  Vis færre
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-5 h-5" />
+                  Se alle arrangementer ({socialEvents.length})
+                </>
+              )}
+            </Button>
+          )}
         </DialogContent>
       </Dialog>
 

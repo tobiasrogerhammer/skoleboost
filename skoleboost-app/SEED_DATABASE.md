@@ -14,6 +14,14 @@ npx convex run seed:seedCoupons
 npx convex run seed:seedEvents
 ```
 
+**For å legge til flere arrangementer** (hvis du allerede har kjørt seedEvents):
+
+```bash
+npx convex run seed:addMoreEvents
+```
+
+Dette legger til 9 nye arrangementer uten å sjekke om de allerede finnes.
+
 ## Steg 3: Seed timeplan og prestasjoner for en bruker
 
 Etter at du har opprettet en bruker (gjennom login-siden), kan du seede timeplan og prestasjoner:

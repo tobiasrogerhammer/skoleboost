@@ -243,12 +243,52 @@ export const getTeacherSchedule = query({
   },
 });
 
+// Get attendance for a specific schedule item and date
+export const getScheduleAttendance = query({
+  args: {
+    scheduleItemId: v.id("scheduleItems"),
+    date: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const clerkUserId = await getClerkUserId(ctx);
+    if (!clerkUserId) {
+      return [];
+    }
+
+    const teacher = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("studentId"), clerkUserId))
+      .first();
+
+    if (!teacher || teacher.role !== "teacher") {
+      return [];
+    }
+
+    // Get all attendance records for this schedule item and date
+    // Use by_date index and filter by scheduleItemId
+    const attendanceRecords = await ctx.db
+      .query("attendance")
+      .withIndex("by_date", (q) => q.eq("date", args.date))
+      .filter((q) => q.eq(q.field("scheduleItemId"), args.scheduleItemId))
+      .collect();
+
+    // Return as a map of studentId -> status
+    const attendanceMap: Record<string, 'present' | 'late' | 'absent'> = {};
+    for (const record of attendanceRecords) {
+      attendanceMap[record.studentId] = record.status;
+    }
+
+    return attendanceMap;
+  },
+});
+
 // Mark attendance
 export const markAttendance = mutation({
   args: {
     studentId: v.id("users"),
     classId: v.id("classes"),
     scheduleItemId: v.optional(v.id("scheduleItems")),
+    date: v.string(),
     status: v.union(v.literal("present"), v.literal("late"), v.literal("absent")),
   },
   handler: async (ctx, args) => {
@@ -271,15 +311,26 @@ export const markAttendance = mutation({
       throw new Error("Not authorized for this class");
     }
 
-    const today = new Date().toLocaleDateString("nb-NO");
-
-    // Check if attendance already marked for today
-    const existing = await ctx.db
-      .query("attendance")
-      .withIndex("by_student", (q) => q.eq("studentId", args.studentId))
-      .filter((q) => q.eq(q.field("date"), today))
-      .filter((q) => q.eq(q.field("classId"), args.classId))
-      .first();
+    // Check if attendance already marked for this schedule item and date
+    let existing = null;
+    if (args.scheduleItemId) {
+      existing = await ctx.db
+        .query("attendance")
+        .withIndex("by_student_schedule", (q) => 
+          q.eq("studentId", args.studentId)
+           .eq("scheduleItemId", args.scheduleItemId)
+           .eq("date", args.date)
+        )
+        .first();
+    } else {
+      // Fallback to checking by classId and date
+      existing = await ctx.db
+        .query("attendance")
+        .withIndex("by_student", (q) => q.eq("studentId", args.studentId))
+        .filter((q) => q.eq(q.field("date"), args.date))
+        .filter((q) => q.eq(q.field("classId"), args.classId))
+        .first();
+    }
 
     if (existing) {
       // Update existing attendance
@@ -295,7 +346,7 @@ export const markAttendance = mutation({
       studentId: args.studentId,
       classId: args.classId,
       scheduleItemId: args.scheduleItemId,
-      date: today,
+      date: args.date,
       status: args.status,
       markedBy: teacher._id,
       markedAt: Date.now(),

@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from './ui/input'
 import { Textarea } from './ui/textarea'
 import { Label } from './ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
 import { Logo } from './Logo'
 
@@ -24,6 +23,8 @@ const mockClasses = [
   { _id: 'class2', name: 'Klasse 8C', grade: '8. trinn', subject: 'Norsk' },
   { _id: 'class3', name: 'Klasse 9B', grade: '9. trinn', subject: 'Norsk' },
   { _id: 'class4', name: 'Klasse 9C', grade: '9. trinn', subject: 'Norsk' },
+  { _id: 'class5', name: 'Klasse 8A', grade: '8. trinn', subject: 'Samfunnsfag' },
+  { _id: 'class6', name: 'Klasse 9B', grade: '9. trinn', subject: 'Samfunnsfag' },
 ]
 
 const getMockTodaySchedule = (teacherName?: string) => {
@@ -33,21 +34,27 @@ const getMockTodaySchedule = (teacherName?: string) => {
   // Return schedule based on today's day
   const schedules: Record<string, any[]> = {
     'Mandag': [
-      { _id: 's1', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '10:45 - 11:30', room: 'Rom 207', day: 'Mandag', type: 'class' },
-      { _id: 's2', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '12:15 - 13:00', room: 'Rom 208', day: 'Mandag', type: 'class' },
+      { _id: 's1', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '08:00 - 09:00', room: 'Rom 201', day: 'Mandag', type: 'class' },
+      { _id: 's2', subject: 'Samfunnsfag', teacher: teacherName || 'Lærer', time: '09:15 - 10:15', room: 'Rom 205', day: 'Mandag', type: 'class' },
+      { _id: 's3', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '10:45 - 11:30', room: 'Rom 207', day: 'Mandag', type: 'class' },
+      { _id: 's4', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '12:15 - 13:00', room: 'Rom 208', day: 'Mandag', type: 'class' },
     ],
     'Tirsdag': [
-      { _id: 's3', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '09:15 - 10:15', room: 'Rom 201', day: 'Tirsdag', type: 'class' },
-      { _id: 's4', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '13:45 - 14:45', room: 'Rom 201', day: 'Tirsdag', type: 'class' },
+      { _id: 's5', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '09:15 - 10:15', room: 'Rom 201', day: 'Tirsdag', type: 'class' },
+      { _id: 's6', subject: 'Samfunnsfag', teacher: teacherName || 'Lærer', time: '11:30 - 12:15', room: 'Rom 205', day: 'Tirsdag', type: 'class' },
+      { _id: 's7', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '13:45 - 14:45', room: 'Rom 201', day: 'Tirsdag', type: 'class' },
     ],
     'Onsdag': [
-      { _id: 's5', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '08:00 - 09:00', room: 'Rom 201', day: 'Onsdag', type: 'class' },
+      { _id: 's8', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '08:00 - 09:00', room: 'Rom 201', day: 'Onsdag', type: 'class' },
+      { _id: 's9', subject: 'Samfunnsfag', teacher: teacherName || 'Lærer', time: '10:00 - 11:00', room: 'Rom 205', day: 'Onsdag', type: 'class' },
     ],
     'Torsdag': [
-      { _id: 's6', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '09:15 - 10:15', room: 'Rom 201', day: 'Torsdag', type: 'class' },
+      { _id: 's10', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '09:15 - 10:15', room: 'Rom 201', day: 'Torsdag', type: 'class' },
+      { _id: 's11', subject: 'Samfunnsfag', teacher: teacherName || 'Lærer', time: '13:00 - 14:00', room: 'Rom 205', day: 'Torsdag', type: 'class' },
     ],
     'Fredag': [
-      { _id: 's7', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '08:00 - 09:00', room: 'Rom 201', day: 'Fredag', type: 'class' },
+      { _id: 's12', subject: 'Norsk', teacher: teacherName || 'Lærer', time: '08:00 - 09:00', room: 'Rom 201', day: 'Fredag', type: 'class' },
+      { _id: 's13', subject: 'Samfunnsfag', teacher: teacherName || 'Lærer', time: '11:00 - 12:00', room: 'Rom 205', day: 'Fredag', type: 'class' },
     ],
     'Lørdag': [],
     'Søndag': [],
@@ -88,13 +95,25 @@ const mockStudents = [
 
 export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
   const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false)
+  const [editingAnnouncement, setEditingAnnouncement] = useState<any | null>(null)
   const [showCouponDialog, setShowCouponDialog] = useState(false)
   const [showEventDialog, setShowEventDialog] = useState(false)
+  const [showAllCouponsDialog, setShowAllCouponsDialog] = useState(false)
+  const [showAllEventsDialog, setShowAllEventsDialog] = useState(false)
   const [editingCoupon, setEditingCoupon] = useState<any | null>(null)
   const [editingEvent, setEditingEvent] = useState<any | null>(null)
   const [selectedClass, setSelectedClass] = useState<string | null>(null)
   const [showClassDialog, setShowClassDialog] = useState(false)
   const [selectedScheduleItem, setSelectedScheduleItem] = useState<any | null>(null)
+  const [currentTime, setCurrentTime] = useState(new Date())
+  
+  // Update current time every second for countdown
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const classesQuery = useQuery(api.teachers.getTeacherClasses, {})
   const todayScheduleQuery = useQuery(api.teachers.getTodaySchedule, {})
@@ -165,18 +184,17 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
   }, [todayAttendance])
 
   return (
-    <div className="pb-20 px-4 max-w-md mx-auto space-y-4" style={{ paddingTop: '2.5rem' }}>
-      {/* Header */}
-      <div className="text-center mb-4">
-        <div className="flex justify-center mb-1">
-          <Logo size="md" />
-        </div>
-        <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>Velkommen tilbake!</h1>
-        <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Fortsett å inspirere og lære elevene dine 🚀</p>
+    <div className="px-4 max-w-md mx-auto space-y-4 relative" style={{ paddingTop: '2.5rem', paddingBottom: '150px' }}>
+      {/* Logo and Brand Name - Top Left */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <Logo size="xs" />
+        <h1 className="font-bold text-base" style={{ color: '#006C75' }}>Skoleboost</h1>
       </div>
 
+
+
       {/* Attendance/Absence Cards */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2" style={{ paddingTop: '2.5rem' }}>
         <Card 
           className="px-4 py-1 text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.02] flex flex-col justify-center gap-2" 
           style={{ 
@@ -207,88 +225,156 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
         </Card>
       </div>
 
-      {/* Today's Schedule */}
+      {/* Today's Schedule - Show only current or next class */}
       <div>
         <h2 className="font-bold text-lg mb-3" style={{ color: '#006C75' }}>Dagens timeplan</h2>
-        {todaySchedule.length === 0 ? (
-          <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
-            <p className="text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen timer i dag</p>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {todaySchedule.map((item: any) => {
-              const now = new Date()
-              const timeMatch = item.time.match(/(\d{2}):(\d{2})/)
-              const startTime = timeMatch ? timeMatch[1] + ':' + timeMatch[2] : ''
-              const [hours, minutes] = startTime.split(':').map(Number)
-              const classTime = new Date()
-              classTime.setHours(hours, minutes, 0, 0)
-              const diffMs = classTime.getTime() - now.getTime()
-              const diffMins = Math.floor(diffMs / 60000)
-              const diffHours = Math.floor(diffMins / 60)
-              const remainingMins = diffMins % 60
+        {(() => {
+          if (todaySchedule.length === 0) {
+            return (
+              <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
+                <p className="text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen timer i dag</p>
+              </Card>
+            )
+          }
 
-              let timeText = ''
-              if (diffMins < 0) {
-                timeText = 'Timer startet'
-              } else if (diffHours > 0) {
-                timeText = `${diffHours}t ${remainingMins}min til timen`
-              } else {
-                timeText = `${diffMins}min til timen`
-              }
+          const now = currentTime
+          
+          // Find current class (started but not ended) or next upcoming class
+          let currentOrNextClass: any = null
+          
+          for (const item of todaySchedule) {
+            const timeMatch = item.time.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/)
+            if (!timeMatch) continue
+            
+            const startHours = parseInt(timeMatch[1])
+            const startMinutes = parseInt(timeMatch[2])
+            const endHours = parseInt(timeMatch[3])
+            const endMinutes = parseInt(timeMatch[4])
+            
+            const startTime = new Date()
+            startTime.setHours(startHours, startMinutes, 0, 0)
+            
+            const endTime = new Date()
+            endTime.setHours(endHours, endMinutes, 0, 0)
+            
+            // Check if this is the current class (started but not ended)
+            if (now >= startTime && now <= endTime) {
+              currentOrNextClass = { ...item, isCurrent: true, startTime, endTime }
+              break
+            }
+            
+            // If no current class found yet, check if this is the next upcoming class
+            if (!currentOrNextClass && now < startTime) {
+              currentOrNextClass = { ...item, isCurrent: false, startTime, endTime }
+            }
+          }
+          
+          // If no current or next class found, show the last class of the day
+          if (!currentOrNextClass) {
+            currentOrNextClass = { ...todaySchedule[todaySchedule.length - 1], isCurrent: false }
+          }
+          
+          const item = currentOrNextClass
+          const timeMatch = item.time.match(/(\d{2}):(\d{2})/)
+          const startTimeStr = timeMatch ? timeMatch[1] + ':' + timeMatch[2] : ''
+          const [hours, minutes] = startTimeStr.split(':').map(Number)
+          const classTime = new Date()
+          classTime.setHours(hours, minutes, 0, 0)
+          const diffMs = classTime.getTime() - now.getTime()
+          const diffMins = Math.floor(diffMs / 60000)
+          const diffHours = Math.floor(diffMins / 60)
+          const remainingMins = diffMins % 60
 
-              return (
-                <Card
-                  key={item._id}
-                  className="p-3 border-2"
-                  style={{
-                    background: 'linear-gradient(to bottom right, rgba(232, 165, 255, 0.1), rgba(232, 246, 246, 0.5))',
-                    borderColor: 'rgba(232, 165, 255, 0.3)',
-                    borderRadius: '12px',
-                  }}
+          let timeText = ''
+          if (item.isCurrent) {
+            // Calculate time until end of class
+            const endTime = item.endTime || classTime
+            const endDiffMs = endTime.getTime() - now.getTime()
+            const endDiffMins = Math.floor(endDiffMs / 60000)
+            const endDiffHours = Math.floor(endDiffMins / 60)
+            const endRemainingMins = endDiffMins % 60
+            
+            if (endDiffHours > 0) {
+              timeText = `Pågår nå - ${endDiffHours}t ${endRemainingMins}min igjen`
+            } else if (endDiffMins > 0) {
+              timeText = `Pågår nå - ${endDiffMins}min igjen`
+            } else {
+              timeText = 'Pågår nå'
+            }
+          } else {
+            if (diffMins < 0) {
+              timeText = 'Timer startet'
+            } else if (diffHours > 0) {
+              timeText = `${diffHours}t ${remainingMins}min til timen`
+            } else {
+              timeText = `${diffMins}min til timen`
+            }
+          }
+
+          // Determine if this is Samfunnsfag (orange) or other subject (purple)
+          const isSamfunnsfag = item.subject === 'Samfunnsfag'
+          
+          // Orange colors for Samfunnsfag
+          const cardBg = isSamfunnsfag 
+            ? 'linear-gradient(to bottom right, rgba(255, 159, 102, 0.1), rgba(255, 245, 240, 0.5))'
+            : 'linear-gradient(to bottom right, rgba(232, 165, 255, 0.1), rgba(232, 246, 246, 0.5))'
+          const cardBorder = isSamfunnsfag
+            ? 'rgba(255, 159, 102, 0.3)'
+            : 'rgba(232, 165, 255, 0.3)'
+          const buttonBg = isSamfunnsfag
+            ? '#FF9F66'
+            : '#C77DFF'
+
+          return (
+            <Card
+              key={item._id}
+              className="p-3 border-2"
+              style={{
+                background: cardBg,
+                borderColor: cardBorder,
+                borderRadius: '12px',
+              }}
+            >
+              <div className="flex items-start justify-between mb-2 gap-2">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-sm truncate" style={{ color: '#006C75' }}>
+                    {item.subject}
+                  </h4>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                    {timeText}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setSelectedScheduleItem(item)}
+                  className="text-xs"
+                  style={{ backgroundColor: buttonBg, color: 'white' }}
                 >
-                  <div className="flex items-start justify-between mb-2 gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-sm truncate" style={{ color: '#006C75' }}>
-                        {item.subject}
-                      </h4>
-                      <p className="text-xs mt-0.5" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                        {timeText}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => setSelectedScheduleItem(item)}
-                      className="flex-shrink-0 text-xs"
-                      style={{ backgroundColor: '#E8A5FF', color: 'white' }}
-                    >
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      <span className="hidden sm:inline">Ta Oppmøte</span>
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 flex-shrink-0" />
-                      <span>{item.time}</span>
-                    </div>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3 flex-shrink-0" />
-                      <span className="truncate">{item.room}</span>
-                    </div>
-                  </div>
-                </Card>
-              )
-            })}
-          </div>
-        )}
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Ta Oppmøte
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3 flex-shrink-0" />
+                  <span>{item.time}</span>
+                </div>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{item.room}</span>
+                </div>
+              </div>
+            </Card>
+          )
+        })()}
       </div>
 
       {/* Classes */}
       <div>
-        <h2 className="font-bold text-lg mb-3" style={{ color: '#006C75' }}>Dine klasser</h2>
+        <h2 className="font-bold text-lg mb-3" style={{ color: '#006C75' }}>Mine klasser</h2>
         {classes.length === 0 ? (
-          <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
+          <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(251, 190, 158, 0.3)', borderRadius: '12px' }}>
             <p className="text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen klasser</p>
           </Card>
         ) : (
@@ -298,20 +384,20 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                 key={cls._id}
                 className="p-3 border-2 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
                 style={{
-                  borderColor: selectedClass === cls._id ? '#E8A5FF' : 'rgba(232, 165, 255, 0.3)',
+                  borderColor: selectedClass === cls._id ? '#FF9F66' : 'rgba(251, 190, 158, 0.3)',
                   borderRadius: '12px',
-                  backgroundColor: selectedClass === cls._id ? 'rgba(232, 165, 255, 0.1)' : 'white',
-                  boxShadow: selectedClass === cls._id ? '0 4px 12px rgba(232, 165, 255, 0.2)' : '0 2px 4px rgba(0, 0, 0, 0.05)'
+                  backgroundColor: selectedClass === cls._id ? 'rgba(251, 190, 158, 0.1)' : 'white',
+                  boxShadow: selectedClass === cls._id ? '0 4px 12px rgba(251, 190, 158, 0.2)' : '0 2px 4px rgba(0, 0, 0, 0.05)'
                 }}
                 onMouseEnter={(e) => {
                   if (selectedClass !== cls._id) {
-                    e.currentTarget.style.borderColor = 'rgba(232, 165, 255, 0.5)'
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(232, 165, 255, 0.15)'
+                    e.currentTarget.style.borderColor = 'rgba(251, 190, 158, 0.5)'
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 190, 158, 0.15)'
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (selectedClass !== cls._id) {
-                    e.currentTarget.style.borderColor = 'rgba(232, 165, 255, 0.3)'
+                    e.currentTarget.style.borderColor = 'rgba(251, 190, 158, 0.3)'
                     e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)'
                   }
                 }}
@@ -321,7 +407,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #E8A5FF, #C77DFF)' }}>
+                  <div className="p-2 rounded-lg" style={{ background: 'linear-gradient(135deg, #FF9F66, #FBBE9E)' }}>
                     <Users className="w-4 h-4 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -329,7 +415,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                       {cls.name}
                     </span>
                   </div>
-                  <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(232, 165, 255, 0.6)' }} />
+                  <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'rgba(255, 159, 102, 0.6)' }} />
                 </div>
               </Card>
             ))}
@@ -349,6 +435,12 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
             </DialogTrigger>
             <CreateAnnouncementDialog onClose={() => setShowAnnouncementDialog(false)} />
           </Dialog>
+          {editingAnnouncement && (
+            <EditAnnouncementDialog 
+              announcement={editingAnnouncement}
+              onClose={() => setEditingAnnouncement(null)} 
+            />
+          )}
         </div>
         {announcements.length === 0 ? (
           <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
@@ -371,7 +463,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
               return (
                 <Card
                   key={announcement._id}
-                  className="p-3 border-2 transition-all hover:scale-[1.01] cursor-pointer"
+                  className="p-3 border-2 transition-all hover:scale-[1.01]"
                   style={{
                     background: 'linear-gradient(135deg, rgba(232, 165, 255, 0.1), rgba(255, 255, 255, 0.8))',
                     borderColor: 'rgba(232, 165, 255, 0.3)',
@@ -390,10 +482,24 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                       <p className="text-xs mb-2 line-clamp-2" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
                         {announcement.content || announcement.description}
                       </p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between">
                         <span className="text-xs font-medium" style={{ color: 'rgba(0, 108, 117, 0.6)' }}>
                           {timeAgo}
                         </span>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingAnnouncement(announcement)
+                            }}
+                          >
+                            <Edit2 className="w-3 h-3" style={{ color: '#006C75' }} />
+                          </Button>
+                          <DeleteAnnouncementButton announcementId={announcement._id} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -545,6 +651,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                   borderColor: 'rgba(232, 165, 255, 0.2)',
                   borderRadius: '12px'
                 }}
+                onClick={() => setShowAllCouponsDialog(true)}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold" style={{ color: '#006C75' }}>
@@ -582,102 +689,72 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
         ) : (
           <div className="space-y-2">
             {eventsQuery.slice(0, 3).map((event: any) => {
-              const getEventStyles = (colorTheme: string) => {
+              const getEventStyles = (colorTheme?: string) => {
                 switch (colorTheme) {
                   case 'blue':
-                    return { bg: 'linear-gradient(135deg, rgba(0, 167, 179, 0.15), rgba(0, 196, 212, 0.1))', border: 'rgba(0, 167, 179, 0.4)', iconBg: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }
+                    return { bg: 'linear-gradient(to bottom right, #00A7B3, #00C4D4, #00A7B3)', border: 'rgba(0, 167, 179, 0.5)' }
                   case 'green':
-                    return { bg: 'linear-gradient(135deg, rgba(78, 205, 196, 0.15), rgba(68, 160, 141, 0.1))', border: 'rgba(78, 205, 196, 0.4)', iconBg: 'linear-gradient(135deg, #4ECDC4, #44A08D)' }
+                    return { bg: 'linear-gradient(to bottom right, #4ECDC4, #44A08D, #4ECDC4)', border: 'rgba(78, 205, 196, 0.5)' }
                   case 'pink':
-                    return { bg: 'linear-gradient(135deg, rgba(255, 107, 157, 0.15), rgba(255, 142, 155, 0.1))', border: 'rgba(255, 107, 157, 0.4)', iconBg: 'linear-gradient(135deg, #FF6B9D, #FF8E9B)' }
+                    return { bg: 'linear-gradient(to bottom right, #FF6B9D, #FF8E9B, #FF6B9D)', border: 'rgba(255, 107, 157, 0.5)' }
                   case 'purple':
-                    return { bg: 'linear-gradient(135deg, rgba(232, 165, 255, 0.15), rgba(199, 125, 255, 0.1))', border: 'rgba(232, 165, 255, 0.4)', iconBg: 'linear-gradient(135deg, #E8A5FF, #C77DFF)' }
+                    return { bg: 'linear-gradient(to bottom right, #E8A5FF, #C77DFF, #E8A5FF)', border: 'rgba(232, 165, 255, 0.5)' }
+                  case 'orange':
+                    return { bg: 'linear-gradient(to bottom right, #FBBE9E, #FF9F66, #FBBE9E)', border: 'rgba(251, 190, 158, 0.5)' }
                   default:
-                    return { bg: 'linear-gradient(135deg, rgba(0, 167, 179, 0.15), rgba(0, 196, 212, 0.1))', border: 'rgba(0, 167, 179, 0.4)', iconBg: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }
+                    return { bg: 'linear-gradient(to bottom right, #00A7B3, #00C4D4, #00A7B3)', border: 'rgba(0, 167, 179, 0.5)' }
                 }
               }
               const eventStyle = getEventStyles(event.colorTheme || 'blue')
-              const fillPercentage = event.capacity > 0 ? (event.registered / event.capacity) * 100 : 0
-              const isFull = event.registered >= event.capacity
 
               return (
               <Card
                 key={event._id}
-                  className="p-3 border-2 transition-all hover:scale-[1.01]"
-                  style={{ 
-                    background: eventStyle.bg,
-                    borderColor: eventStyle.border, 
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-                  }}
+                className="p-4 border-2 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]"
+                style={{ 
+                  background: eventStyle.bg,
+                  borderColor: eventStyle.border,
+                  borderRadius: '16px',
+                  boxShadow: '0 4px 12px rgba(0, 167, 179, 0.15)'
+                }}
               >
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="rounded-lg flex-shrink-0" style={{ background: eventStyle.iconBg, padding: '10px' }}>
-                        <span className="text-xl">{event.emoji}</span>
-                      </div>
-                    <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm mb-1 truncate" style={{ color: '#006C75' }}>
-                        {event.title}
-                      </h4>
-                        <p className="text-xs mb-2 line-clamp-2" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                        {event.description}
-                      </p>
-                        <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                          <span 
-                            className="text-xs font-semibold px-2 py-1 rounded-full" 
-                            style={{ 
-                              color: '#006C75', 
-                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                              border: '1px solid rgba(0, 0, 0, 0.1)'
-                            }}
-                          >
-                            📅 {event.date}
-                          </span>
-                          <span 
-                            className="text-xs font-semibold px-2 py-1 rounded-full" 
-                            style={{ 
-                              color: '#006C75', 
-                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                              border: '1px solid rgba(0, 0, 0, 0.1)'
-                            }}
-                          >
-                            ⏰ {event.time}
-                          </span>
-                      </div>
-                        <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 flex-1">
+                  {event.emoji && (
+                    <span className="text-2xl flex-shrink-0">{event.emoji}</span>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-bold text-base drop-shadow-md line-clamp-1" style={{ color: 'white' }}>{event.title}</h4>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                      {event.date && (
+                        <Badge className="text-xs bg-white/40 text-white border-white/50 backdrop-blur-md font-bold px-2 py-0.5">
+                          {event.date}
+                        </Badge>
+                      )}
+                      <span>{event.time}</span>
+                      {event.capacity && (
+                        <>
+                          <span>•</span>
                           <div className="flex items-center gap-1">
-                            <Users className="w-3 h-3" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
-                            <span className="text-xs font-semibold" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                              {event.registered}/{event.capacity}
-                            </span>
+                            <Users className="w-3 h-3" />
+                            <span>{event.registered || 0}/{event.capacity}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
-                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
-                            <div 
-                              className="h-full rounded-full transition-all"
-                              style={{ 
-                                width: `${fillPercentage}%`,
-                                background: isFull 
-                                  ? 'linear-gradient(90deg, #EF4444, #F87171)' 
-                                  : eventStyle.iconBg
-                              }}
-                            />
                   </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 flex-shrink-0">
+                  <div className="flex gap-1 flex-shrink-0">
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       onClick={() => {
                         setEditingEvent(event)
                         setShowEventDialog(true)
                       }}
-                        className="p-1.5"
-                      style={{ color: '#E8A5FF' }}
+                      className="p-1.5 bg-white/20 border-white/50 hover:bg-white/30"
                     >
-                        <Edit2 className="w-3.5 h-3.5" />
+                      <Edit2 className="w-4 h-4 text-white" />
                     </Button>
                     <DeleteEventButton eventId={event._id} />
                   </div>
@@ -693,6 +770,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                   borderColor: 'rgba(232, 165, 255, 0.2)',
                   borderRadius: '12px'
                 }}
+                onClick={() => setShowAllEventsDialog(true)}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold" style={{ color: '#006C75' }}>
@@ -748,6 +826,202 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
           }}
         />
       )}
+
+      {/* All Coupons Dialog */}
+      <Dialog open={showAllCouponsDialog} onOpenChange={setShowAllCouponsDialog}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Alle Kuponger</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-4">
+            {(couponsQuery || []).map((coupon: any, index: number) => {
+              const getCategoryColor = (category: string) => {
+                switch (category) {
+                  case 'Mat':
+                    return { bg: 'linear-gradient(to right, #FBBE9E, #FF9F66)', text: 'white', border: '#FBBE9E' }
+                  case 'Drikke':
+                    return { bg: 'linear-gradient(to right, #00A7B3, #00C4D4)', text: 'white', border: '#00A7B3' }
+                  case 'Snacks':
+                    return { bg: 'linear-gradient(to right, #E8A5FF, #C77DFF)', text: 'white', border: '#E8A5FF' }
+                  default:
+                    return { bg: '#E8F6F6', text: '#006C75', border: 'rgba(0, 167, 179, 0.3)' }
+                }
+              }
+              
+              const cardGradients = [
+                { bg: 'linear-gradient(to bottom right, #E8F6F6, rgba(0, 167, 179, 0.1), #E8F6F6)', border: 'rgba(0, 167, 179, 0.3)' },
+                { bg: 'linear-gradient(to bottom right, #FFF4E6, rgba(251, 190, 158, 0.2), #FFF4E6)', border: 'rgba(0, 167, 179, 0.3)' },
+                { bg: 'linear-gradient(to bottom right, #E8F6F6, rgba(0, 167, 179, 0.1), #E8F6F6)', border: 'rgba(0, 167, 179, 0.3)' },
+                { bg: 'linear-gradient(to bottom right, #FFF4E6, rgba(251, 190, 158, 0.2), #FFF4E6)', border: 'rgba(0, 167, 179, 0.3)' },
+                { bg: 'linear-gradient(to bottom right, #E8F6F6, rgba(0, 167, 179, 0.1), #E8F6F6)', border: 'rgba(0, 167, 179, 0.3)' },
+                { bg: 'linear-gradient(to bottom right, #FFF4E6, rgba(251, 190, 158, 0.2), #FFF4E6)', border: 'rgba(0, 167, 179, 0.3)' },
+              ]
+              const gradient = cardGradients[index % cardGradients.length]
+
+              return (
+                <Card
+                  key={coupon._id}
+                  className="p-4 border-2 transition-all duration-200"
+                  style={{
+                    background: gradient.bg,
+                    borderColor: gradient.border,
+                    borderRadius: '16px'
+                  }}
+                >
+                  {/* Header Row */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-base truncate" style={{ color: '#006C75' }}>{coupon.title}</h4>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className="text-xs border font-bold px-2 py-0.5 inline-block" style={{ background: getCategoryColor(coupon.category || 'Annet').bg, color: getCategoryColor(coupon.category || 'Annet').text, borderColor: getCategoryColor(coupon.category || 'Annet').border }}>
+                            {coupon.category || 'Annet'}
+                          </Badge>
+                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full shadow-sm flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }}>
+                            <Coins className="w-4 h-4 text-white" />
+                            <span className="font-extrabold text-white text-sm whitespace-nowrap">{coupon.cost} pts</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingCoupon(coupon)
+                          setShowCouponDialog(true)
+                          setShowAllCouponsDialog(false)
+                        }}
+                        className="p-1.5"
+                      >
+                        <Edit2 className="w-4 h-4" style={{ color: '#006C75' }} />
+                      </Button>
+                      <DeleteCouponButton couponId={coupon._id} />
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm font-medium leading-snug" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>
+                    {coupon.description}
+                  </p>
+
+                  {/* Allergies Row */}
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    {coupon.allergies && coupon.allergies.length > 0 ? (
+                      coupon.allergies.map((allergy: string, idx: number) => (
+                        <span 
+                          key={idx}
+                          className="text-xs font-semibold px-2 py-1 rounded-full" 
+                          style={{ color: '#006C75', backgroundColor: '#FFF4E6', border: '1px solid rgba(251, 190, 158, 0.5)' }}
+                        >
+                          {allergy}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs font-semibold px-2 rounded-full" style={{ color: '#00A7B3', backgroundColor: '#E8F6F6' }}>
+                        Allergifri
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Availability */}
+                  <div className="text-xs font-semibold" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                    {coupon.available} tilgjengelig
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* All Events Dialog */}
+      <Dialog open={showAllEventsDialog} onOpenChange={setShowAllEventsDialog}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Alle Arrangementer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 mt-4">
+            {(eventsQuery || []).map((event: any) => {
+              const getEventStyles = (colorTheme?: string) => {
+                switch (colorTheme) {
+                  case 'blue':
+                    return { bg: 'linear-gradient(to bottom right, #00A7B3, #00C4D4, #00A7B3)', border: 'rgba(0, 167, 179, 0.5)' }
+                  case 'green':
+                    return { bg: 'linear-gradient(to bottom right, #4ECDC4, #44A08D, #4ECDC4)', border: 'rgba(78, 205, 196, 0.5)' }
+                  case 'pink':
+                    return { bg: 'linear-gradient(to bottom right, #FF6B9D, #FF8E9B, #FF6B9D)', border: 'rgba(255, 107, 157, 0.5)' }
+                  case 'purple':
+                    return { bg: 'linear-gradient(to bottom right, #E8A5FF, #C77DFF, #E8A5FF)', border: 'rgba(232, 165, 255, 0.5)' }
+                  case 'orange':
+                    return { bg: 'linear-gradient(to bottom right, #FBBE9E, #FF9F66, #FBBE9E)', border: 'rgba(251, 190, 158, 0.5)' }
+                  default:
+                    return { bg: 'linear-gradient(to bottom right, #00A7B3, #00C4D4, #00A7B3)', border: 'rgba(0, 167, 179, 0.5)' }
+                }
+              }
+              
+              const eventStyle = getEventStyles(event.colorTheme)
+              
+              return (
+                <Card
+                  key={event._id}
+                  className="p-4 border-2 transition-all duration-300"
+                  style={{
+                    background: eventStyle.bg,
+                    borderColor: eventStyle.border,
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 12px rgba(0, 167, 179, 0.15)'
+                  }}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    {event.emoji && (
+                      <span className="text-2xl flex-shrink-0">{event.emoji}</span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-base drop-shadow-md line-clamp-1" style={{ color: 'white' }}>{event.title}</h4>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs mb-2" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                        {event.date && (
+                          <Badge className="text-xs bg-white/40 text-white border-white/50 backdrop-blur-md font-bold px-2 py-0.5">
+                            {event.date}
+                          </Badge>
+                        )}
+                        <span>{event.time}</span>
+                        {event.capacity && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              <span>{event.registered || 0}/{event.capacity}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setEditingEvent(event)
+                          setShowEventDialog(true)
+                          setShowAllEventsDialog(false)
+                        }}
+                        className="p-1.5 bg-white/20 border-white/50 hover:bg-white/30"
+                      >
+                        <Edit2 className="w-4 h-4 text-white" />
+                      </Button>
+                      <DeleteEventButton eventId={event._id} />
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -809,6 +1083,131 @@ function CreateAnnouncementDialog({ onClose }: { onClose: () => void }) {
         </div>
       </form>
     </DialogContent>
+  )
+}
+
+// Edit Announcement Dialog
+function EditAnnouncementDialog({ announcement, onClose }: { announcement: any, onClose: () => void }) {
+  const [title, setTitle] = useState(announcement.title || '')
+  const [content, setContent] = useState(announcement.content || '')
+  const updateAnnouncement = useMutation(api.announcements.update)
+
+  React.useEffect(() => {
+    setTitle(announcement.title || '')
+    setContent(announcement.content || '')
+  }, [announcement])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      await updateAnnouncement({ 
+        announcementId: announcement._id,
+        title, 
+        content 
+      })
+      toast.success('Kunngjøring oppdatert!')
+      onClose()
+    } catch (error: any) {
+      toast.error(error.message || 'Kunne ikke oppdatere kunngjøring')
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Rediger kunngjøring</DialogTitle>
+          <DialogDescription>
+            Oppdater kunngjøringen
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="edit-title">Tittel</Label>
+            <Input
+              id="edit-title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-content">Info</Label>
+            <Textarea
+              id="edit-content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              rows={4}
+              required
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              Avbryt
+            </Button>
+            <Button type="submit" className="flex-1" style={{ backgroundColor: '#00A7B3', color: 'white' }}>
+              Oppdater
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// Delete Announcement Button
+function DeleteAnnouncementButton({ announcementId }: { announcementId: any }) {
+  const [showConfirm, setShowConfirm] = useState(false)
+  const deleteAnnouncement = useMutation(api.announcements.deleteAnnouncement)
+
+  const handleDelete = async () => {
+    try {
+      await deleteAnnouncement({ announcementId })
+      toast.success('Kunngjøring slettet!')
+      setShowConfirm(false)
+    } catch (error: any) {
+      toast.error(error.message || 'Kunne ikke slette kunngjøring')
+    }
+  }
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-6 w-6 p-0"
+        onClick={(e) => {
+          e.stopPropagation()
+          setShowConfirm(true)
+        }}
+      >
+        <Trash2 className="w-3 h-3" style={{ color: '#dc2626' }} />
+      </Button>
+      {showConfirm && (
+        <Dialog open onOpenChange={setShowConfirm}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Slett kunngjøring</DialogTitle>
+              <DialogDescription>
+                Er du sikker på at du vil slette denne kunngjøringen? Denne handlingen kan ikke angres.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowConfirm(false)} className="flex-1">
+                Avbryt
+              </Button>
+              <Button 
+                onClick={handleDelete} 
+                className="flex-1" 
+                style={{ backgroundColor: '#dc2626', color: 'white' }}
+              >
+                Slett
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   )
 }
 
@@ -902,12 +1301,11 @@ function DeleteEventButton({ eventId }: { eventId: any }) {
   return (
     <Button
       size="sm"
-      variant="ghost"
+      variant="outline"
       onClick={() => setShowConfirm(true)}
-      className="p-1.5 sm:p-2"
-      style={{ color: '#FF6B9D' }}
+      className="p-1.5 bg-white/20 border-white/50 hover:bg-white/30"
     >
-      <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+      <Trash2 className="w-4 h-4 text-white" />
     </Button>
   )
 }
@@ -1038,25 +1436,70 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
 
 // Create/Edit Event Dialog
 function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => void }) {
+  // Helper function to convert "DD. MMM" to "YYYY-MM-DD" for date input
+  const parseDateForInput = (dateStr: string): string => {
+    if (!dateStr) return ''
+    // Check if already in YYYY-MM-DD format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+    
+    // Parse "DD. MMM" format (e.g., "27. nov")
+    const parts = dateStr.split('. ')
+    if (parts.length !== 2) return ''
+    
+    const day = parseInt(parts[0], 10)
+    const monthStr = parts[1].toLowerCase()
+    const monthMap: { [key: string]: number } = {
+      'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'jun': 5,
+      'jul': 6, 'aug': 7, 'sep': 8, 'okt': 9, 'nov': 10, 'des': 11
+    }
+    const month = monthMap[monthStr] ?? 0
+    
+    // Use 2025 as the year (events are for 2025)
+    const date = new Date(2025, month, day)
+    const year = date.getFullYear()
+    const monthPadded = String(month + 1).padStart(2, '0')
+    const dayPadded = String(day).padStart(2, '0')
+    return `${year}-${monthPadded}-${dayPadded}`
+  }
+
+  // Helper function to convert "YYYY-MM-DD" to "DD. MMM" for database
+  const formatDateForDatabase = (dateStr: string): string => {
+    if (!dateStr) return ''
+    // Check if already in "DD. MMM" format
+    if (/^\d{1,2}\. [a-z]{3}$/i.test(dateStr)) return dateStr
+    
+    // Parse "YYYY-MM-DD" format
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return ''
+    
+    const day = date.getDate()
+    const month = date.toLocaleDateString('no-NO', { month: 'short' })
+    return `${day}. ${month}`
+  }
+
   const [title, setTitle] = useState(event?.title || '')
   const [description, setDescription] = useState(event?.description || '')
-  const [date, setDate] = useState(event?.date || '')
+  const [date, setDate] = useState(parseDateForInput(event?.date || ''))
   const [time, setTime] = useState(event?.time || '')
   const [emoji, setEmoji] = useState(event?.emoji || '')
   const [capacity, setCapacity] = useState(event?.capacity?.toString() || '')
-  const [colorTheme, setColorTheme] = useState(event?.colorTheme || 'blue')
+  // Color theme is set automatically based on event type, not editable - keep existing or default to blue
+  const [colorTheme] = useState(event?.colorTheme || 'blue')
   const createEvent = useMutation(api.teacherEvents.createEvent)
   const updateEvent = useMutation(api.teacherEvents.updateEvent)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // Convert date from YYYY-MM-DD to DD. MMM format
+      const formattedDate = formatDateForDatabase(date)
+      
       if (event) {
         await updateEvent({
           eventId: event._id,
           title,
           description,
-          date,
+          date: formattedDate,
           time,
           emoji,
           capacity: parseInt(capacity),
@@ -1067,7 +1510,7 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
         await createEvent({
           title,
           description,
-          date,
+          date: formattedDate,
           time,
           emoji,
           capacity: parseInt(capacity),
@@ -1093,7 +1536,6 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="grid grid-cols-2 gap-4">
           <div>
               <Label htmlFor="emoji" className="text-sm font-semibold" style={{ color: '#006C75' }}>Emoji</Label>
             <Input
@@ -1104,21 +1546,6 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
                 className="mt-1"
               required
             />
-          </div>
-          <div>
-              <Label htmlFor="colorTheme" className="text-sm font-semibold" style={{ color: '#006C75' }}>Farge</Label>
-              <Select value={colorTheme} onValueChange={setColorTheme}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="blue">🔵 Blå</SelectItem>
-                  <SelectItem value="purple">🟣 Lilla</SelectItem>
-                  <SelectItem value="pink">🩷 Rosa</SelectItem>
-                  <SelectItem value="green">🟢 Grønn</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           <div>
             <Label htmlFor="title" className="text-sm font-semibold" style={{ color: '#006C75' }}>Tittel</Label>
@@ -1192,8 +1619,22 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
             </Button>
             <Button 
               type="submit" 
-              className="flex-1 font-semibold" 
-              style={{ backgroundColor: '#E8A5FF', color: 'white' }}
+              className="flex-1 font-bold transition-all duration-200 hover:scale-105" 
+              style={{ 
+                background: 'linear-gradient(135deg, #9D4EDD 0%, #C77DFF 50%, #E8A5FF 100%)', 
+                color: 'white',
+                border: 'none',
+                boxShadow: '0 4px 16px rgba(157, 78, 221, 0.5)',
+                fontWeight: 'bold'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #7B2CBF 0%, #9D4EDD 50%, #C77DFF 100%)'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(157, 78, 221, 0.6)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #9D4EDD 0%, #C77DFF 50%, #E8A5FF 100%)'
+                e.currentTarget.style.boxShadow = '0 4px 16px rgba(157, 78, 221, 0.5)'
+              }}
             >
               {event ? 'Oppdater' : 'Opprett'}
             </Button>
@@ -1324,13 +1765,48 @@ function AttendanceDialog({
   usingMockData: boolean
   onClose: () => void
 }) {
-  const [attendance, setAttendance] = useState<Record<string, 'present' | 'late' | 'absent'>>({})
   const markAttendance = useMutation(api.teachers.markAttendance)
   const classesQuery = useQuery(api.teachers.getTeacherClasses)
   const classes = (classesQuery && classesQuery.length > 0) ? classesQuery : mockClasses
   
   // Find class by subject/teacher name (simplified - in real app use proper classId)
   const classObj = classes.find((c: any) => c.name.includes(scheduleItem.subject?.substring(0, 3) || '')) || classes[0]
+
+  // Get date for the schedule item's day
+  const getDateForDay = (dayName: string): string => {
+    const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
+    const dayIndex = days.indexOf(dayName)
+    if (dayIndex === -1) return new Date().toLocaleDateString("nb-NO")
+    
+    const today = new Date()
+    const currentDayIndex = today.getDay()
+    const daysUntilTarget = (dayIndex - currentDayIndex + 7) % 7
+    const targetDate = new Date(today)
+    targetDate.setDate(today.getDate() + daysUntilTarget)
+    return targetDate.toLocaleDateString("nb-NO")
+  }
+
+  const attendanceDate = scheduleItem.day ? getDateForDay(scheduleItem.day) : new Date().toLocaleDateString("nb-NO")
+
+  // Load existing attendance for this schedule item and date
+  const existingAttendanceQuery = useQuery(
+    api.teachers.getScheduleAttendance,
+    !usingMockData && scheduleItem._id && !scheduleItem._id.toString().startsWith('item') 
+      ? { scheduleItemId: scheduleItem._id, date: attendanceDate }
+      : "skip"
+  )
+  
+  const [attendance, setAttendance] = useState<Record<string, 'present' | 'late' | 'absent'>>({})
+  
+  // Update attendance state when existing attendance is loaded or when dialog opens
+  React.useEffect(() => {
+    if (existingAttendanceQuery) {
+      setAttendance(existingAttendanceQuery)
+    } else {
+      // Reset to empty if query returns undefined/null (e.g., when dialog first opens)
+      setAttendance({})
+    }
+  }, [existingAttendanceQuery, scheduleItem._id, attendanceDate])
 
   const handleStatusChange = async (studentId: string, status: 'present' | 'late' | 'absent') => {
     setAttendance((prev) => ({ ...prev, [studentId]: status }))
@@ -1342,21 +1818,23 @@ function AttendanceDialog({
     }
     
     try {
-      if (classObj && !classObj._id.startsWith('class') && typeof classObj._id !== 'string') {
+      if (classObj && !classObj._id.startsWith('class') && typeof classObj._id !== 'string' && scheduleItem._id) {
         await markAttendance({
           studentId: studentId as any,
           classId: classObj._id as any,
+          scheduleItemId: scheduleItem._id,
+          date: attendanceDate,
           status,
         })
-        toast.success('Oppmøte markert!')
+        toast.success('Oppmøte lagret!')
       }
     } catch (error: any) {
-      toast.error(error.message || 'Kunne ikke markere oppmøte')
+      toast.error(error.message || 'Kunne ikke lagre oppmøte')
     }
   }
 
   return (
-    <Dialog open onOpenChange={onClose}>
+    <Dialog open onOpenChange={onClose} key={`${scheduleItem._id}-${attendanceDate}`}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Oppmøte {scheduleItem.subject}</DialogTitle>

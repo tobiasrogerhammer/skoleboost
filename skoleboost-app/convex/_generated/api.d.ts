@@ -12,6 +12,7 @@ import type * as achievements from "../achievements.js";
 import type * as announcements from "../announcements.js";
 import type * as auth from "../auth.js";
 import type * as clerkAuth from "../clerkAuth.js";
+import type * as comments from "../comments.js";
 import type * as coupons from "../coupons.js";
 import type * as events from "../events.js";
 import type * as getUserId from "../getUserId.js";
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   announcements: typeof announcements;
   auth: typeof auth;
   clerkAuth: typeof clerkAuth;
+  comments: typeof comments;
   coupons: typeof coupons;
   events: typeof events;
   getUserId: typeof getUserId;

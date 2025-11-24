@@ -1,9 +1,11 @@
 import React from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { User, GraduationCap, Users, TrendingUp, Calendar, Award, BookOpen, Clock, CheckCircle2, Bell, Sparkles } from 'lucide-react'
+import { User, GraduationCap, Users, TrendingUp, Calendar, Award, BookOpen, Clock, CheckCircle2, Bell, Sparkles, Mail } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
+import { Logo } from './Logo'
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar'
 
 // Mock data for demo
 const mockClasses = [
@@ -95,20 +97,38 @@ export function TeacherProfilePage() {
   }).length
 
   return (
-    <div className="pb-20 px-4 max-w-md mx-auto space-y-2" style={{ paddingTop: '2.5rem' }}>
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-2 relative" style={{ paddingTop: '2.5rem' }}>
+      {/* Logo and Brand Name - Top Left */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <Logo size="xs" />
+        <h1 className="font-bold text-base" style={{ color: '#006C75' }}>Skoleboost</h1>
+      </div>
       {/* Enhanced Profile Header */}
-      <Card className="p-6 border-2 shadow-xl mt-4" style={{ background: 'linear-gradient(135deg, #E8A5FF 0%, #C77DFF 50%, #E8A5FF 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(232, 165, 255, 0.3)' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white/60 shadow-lg">
-            <GraduationCap className="w-7 h-7 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-white font-extrabold text-xl drop-shadow-lg truncate">{teacher.name}</h2>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-white/95 text-sm font-semibold">Lærer</span>
-              <span className="text-white/70">•</span>
-              <span className="text-white/95 text-sm font-semibold truncate">{teacher.email}</span>
+      <Card className="p-4 border-2 shadow-xl mt-8" style={{ background: 'linear-gradient(135deg, #E8A5FF 0%, #C77DFF 50%, #E8A5FF 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(232, 165, 255, 0.3)' }}>
+        <div className="flex flex-col gap-3">
+          {/* Top Row: Avatar and Name */}
+          <div className="flex items-center gap-3">
+            <Avatar className="w-16 h-16 border-3 border-white/60 shadow-xl flex-shrink-0">
+              <AvatarImage src={teacherQuery?.imageUrl} alt={teacher.name} />
+              <AvatarFallback className="bg-white/40 backdrop-blur-md text-white text-xl font-extrabold" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
+                {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-white font-extrabold text-xl drop-shadow-lg truncate mb-1">{teacher.name}</h2>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-white/30 text-white border-white/50 font-semibold px-2 py-0.5">
+                  <GraduationCap className="w-3 h-3 mr-1" />
+                  Lærer
+                </Badge>
+              </div>
             </div>
+          </div>
+          
+          {/* Bottom Row: Email and Additional Info */}
+          <div className="flex items-center gap-2 pt-2 border-t border-white/20">
+            <Mail className="w-4 h-4 text-white flex-shrink-0" />
+            <span className="text-white text-sm font-medium truncate flex-1">{teacher.email || 'Ingen e-post registrert'}</span>
           </div>
         </div>
       </Card>

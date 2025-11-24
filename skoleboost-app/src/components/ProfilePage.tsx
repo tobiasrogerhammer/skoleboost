@@ -1,12 +1,14 @@
 import React from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { User, Award, TrendingUp, Calendar, Target, Star, Coins, Map, CheckCircle2, Lock } from 'lucide-react'
+import { User, Award, TrendingUp, Calendar, Target, Star, Coins, Map, CheckCircle2, Lock, Mail, GraduationCap } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
 import { Button } from './ui/button'
 import { EventParticipation } from './EventParticipation'
+import { Logo } from './Logo'
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar'
 
 interface Achievement {
   id: string
@@ -88,22 +90,51 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
   const studentInfo = getStudentInfo(currentUser)
   
   return (
-    <div className="pb-20 px-4 max-w-md mx-auto space-y-2" style={{ paddingTop: '2.5rem' }}>
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-2 relative" style={{ paddingTop: '2.5rem' }}>
+      {/* Logo and Brand Name - Top Left */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <Logo size="xs" />
+        <h1 className="font-bold text-base" style={{ color: '#006C75' }}>Skoleboost</h1>
+      </div>
       {/* Enhanced Profile Header */}
-      <Card className="p-6 border-2 shadow-xl mt-4" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0, 167, 179, 0.3)' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center flex-shrink-0 border-2 border-white/60 shadow-lg">
-            <User className="w-7 h-7 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-white font-extrabold text-xl drop-shadow-lg truncate">{studentInfo.name}</h2>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-white text-sm font-semibold">{currentUser?.role === 'student' ? 'Elev' : 'Lærer'}</span>
-              <span className="text-white">•</span>
-              <span className="text-white text-sm font-semibold truncate">{studentInfo.grade}</span>
-              <span className="text-white">•</span>
-              <span className="text-white text-sm font-semibold">Siden {studentInfo.joinDate}</span>
+      <Card className="p-4 border-2 shadow-xl mt-8" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0, 167, 179, 0.3)' }}>
+        <div className="flex flex-col gap-3">
+          {/* Top Row: Avatar and Name */}
+          <div className="flex items-center gap-3">
+            <Avatar className="w-16 h-16 border-3 border-white/60 shadow-xl flex-shrink-0">
+              <AvatarImage src={currentUser?.imageUrl} alt={studentInfo.name} />
+              <AvatarFallback className="bg-white/40 backdrop-blur-md text-white text-xl font-extrabold" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>
+                {studentInfo.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-white font-extrabold text-xl drop-shadow-lg truncate mb-1">{studentInfo.name}</h2>
+              <div className="flex items-center gap-2">
+                {currentUser?.role === 'student' ? (
+                  <Badge className="bg-white/30 text-white border-white/50 font-semibold px-2 py-0.5">
+                    <User className="w-3 h-3 mr-1" />
+                    Elev
+                  </Badge>
+                ) : (
+                  <Badge className="bg-white/30 text-white border-white/50 font-semibold px-2 py-0.5">
+                    <GraduationCap className="w-3 h-3 mr-1" />
+                    Lærer
+                  </Badge>
+                )}
+                {studentInfo.grade && (
+                  <>
+                    <span className="text-white">•</span>
+                    <span className="text-white text-sm font-semibold truncate">{studentInfo.grade}</span>
+                  </>
+                )}
+              </div>
             </div>
+          </div>
+          
+          {/* Bottom Row: Email and Additional Info */}
+          <div className="flex items-center gap-2 pt-2 border-t border-white/20">
+            <Mail className="w-4 h-4 text-white flex-shrink-0" />
+            <span className="text-white text-sm font-medium truncate flex-1">{currentUser?.email || 'Ingen e-post registrert'}</span>
           </div>
         </div>
       </Card>
@@ -187,14 +218,14 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
       </Card>
 
       {/* Enhanced Achievements */}
-      <Card className="p-5 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.08), #E8F6F6, rgba(0, 167, 179, 0.08))', borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '20px' }}>
+      <Card className="p-5 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(251, 190, 158, 0.15), #FFF5F0, rgba(251, 190, 158, 0.15))', borderColor: 'rgba(251, 190, 158, 0.4)', borderRadius: '20px' }}>
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="mb-1 flex items-center gap-2 font-extrabold text-xl" style={{ color: '#006C75' }}>
-              <Award className="w-6 h-6" style={{ color: '#00A7B3' }} />
+            <h3 className="mb-1 flex items-center gap-2 font-extrabold text-xl" style={{ color: '#B45309' }}>
+              <Award className="w-6 h-6" style={{ color: '#FF9F66' }} />
               Prestasjoner
         </h3>
-            <p className="text-xs font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Lås opp ditt potensial! ⭐</p>
+            <p className="text-xs font-medium" style={{ color: 'rgba(180, 83, 9, 0.7)' }}>Lås opp ditt potensial! ⭐</p>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3">
@@ -204,10 +235,10 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
                   className="flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-300 hover:scale-[1.02] relative"
                   style={achievement.earned
                     ? { 
-                        background: 'linear-gradient(135deg, #E8F6F6, white, #E8F6F6)', 
-                        borderColor: '#00A7B3', 
+                        background: 'linear-gradient(135deg, #FFF5F0, white, #FFF5F0)', 
+                        borderColor: '#FF9F66', 
                         borderWidth: '2px',
-                        boxShadow: '0 4px 16px rgba(0, 167, 179, 0.3)',
+                        boxShadow: '0 4px 16px rgba(251, 190, 158, 0.3)',
                         borderRadius: '16px'
                       }
                     : { 
@@ -233,7 +264,7 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
                   </div>
               <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className={`font-extrabold text-base ${achievement.earned ? '' : 'opacity-60'}`} style={{ color: achievement.earned ? '#006C75' : '#6b7280' }}>
+                      <h4 className={`font-extrabold text-base ${achievement.earned ? '' : 'opacity-60'}`} style={{ color: achievement.earned ? '#B45309' : '#6b7280' }}>
                         {achievement.title}
                       </h4>
                       {achievement.earned && (
@@ -248,22 +279,22 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
                         </Badge>
                       )}
                 </div>
-                    <p className={`text-sm mb-3 font-medium leading-relaxed ${achievement.earned ? '' : 'opacity-60'}`} style={{ color: achievement.earned ? 'rgba(0, 108, 117, 0.9)' : '#6b7280' }}>
+                    <p className={`text-sm mb-3 font-medium leading-relaxed ${achievement.earned ? '' : 'opacity-60'}`} style={{ color: achievement.earned ? 'rgba(180, 83, 9, 0.9)' : '#6b7280' }}>
                   {achievement.description}
                 </p>
                 {!achievement.earned && achievement.progress && (
                       <div className="mt-2">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-xs font-semibold" style={{ color: '#6b7280' }}>Fremgang</span>
-                          <span className="text-xs font-extrabold" style={{ color: '#00A7B3' }}>{achievement.progress}%</span>
+                          <span className="text-xs font-extrabold" style={{ color: '#FF9F66' }}>{achievement.progress}%</span>
                         </div>
-                        <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(0, 167, 179, 0.1)' }}>
+                        <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(251, 190, 158, 0.2)' }}>
                           <div 
                             className="h-full rounded-full transition-all duration-500"
                             style={{ 
                               width: `${achievement.progress}%`, 
-                              background: 'linear-gradient(90deg, #00A7B3, #00C4D4)',
-                              boxShadow: '0 0 10px rgba(0, 167, 179, 0.3)'
+                              background: 'linear-gradient(90deg, #FF9F66, #FFB84D)',
+                              boxShadow: '0 0 10px rgba(251, 190, 158, 0.3)'
                             }}
                           ></div>
                     </div>
@@ -279,18 +310,18 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
       <EventParticipation />
 
       {/* Enhanced Goals */}
-      <Card className="p-5 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.08), #E8F6F6, rgba(0, 167, 179, 0.08))', borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '20px' }}>
+      <Card className="p-5 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(251, 190, 158, 0.15), #FFF5F0, rgba(251, 190, 158, 0.15))', borderColor: 'rgba(251, 190, 158, 0.4)', borderRadius: '20px' }}>
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h3 className="mb-1 flex items-center gap-2 font-extrabold text-xl" style={{ color: '#006C75' }}>
-              <Target className="w-6 h-6" style={{ color: '#00A7B3' }} />
+            <h3 className="mb-1 flex items-center gap-2 font-extrabold text-xl" style={{ color: '#B45309' }}>
+              <Target className="w-6 h-6" style={{ color: '#FF9F66' }} />
           Nåværende Mål
         </h3>
-            <p className="text-xs font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Fortsett å jobbe mot målet! 🎯</p>
+            <p className="text-xs font-medium" style={{ color: 'rgba(180, 83, 9, 0.7)' }}>Fortsett å jobbe mot målet! 🎯</p>
           </div>
         </div>
         <div className="space-y-4">
-          <div className="p-5 rounded-xl border-2 shadow-xl transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 25px rgba(0, 167, 179, 0.3)' }}>
+          <div className="p-5 rounded-xl border-2 shadow-xl transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #FBBE9E 0%, #FF9F66 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 25px rgba(251, 190, 158, 0.3)' }}>
             <div className="flex justify-between items-center mb-3">
               <div>
                 <h4 className="text-white font-extrabold text-lg mb-1">🎯 Nå 500 Poeng</h4>
@@ -311,7 +342,7 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
             <p className="text-xs text-white/90 font-semibold mt-2">{500 - totalEarned} poeng igjen!</p>
           </div>
           
-          <div className="p-5 rounded-xl border-2 shadow-xl transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #FBBE9E 0%, #FF9F66 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 25px rgba(251, 190, 158, 0.3)' }}>
+          <div className="p-5 rounded-xl border-2 shadow-xl transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 25px rgba(0, 167, 179, 0.3)' }}>
             <div className="flex justify-between items-center mb-3">
               <div>
                 <h4 className="text-white font-extrabold text-lg mb-1">📅 Perfekt Oppmøte Måned</h4>

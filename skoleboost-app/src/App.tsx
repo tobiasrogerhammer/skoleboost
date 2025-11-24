@@ -88,6 +88,7 @@ export default function App() {
               email: clerkUser.emailAddresses[0]?.emailAddress || "",
               grade: "",
               clerkUserId: clerkUserId || clerkUser.id || undefined, // Pass user ID as fallback
+              imageUrl: clerkUser.imageUrl || undefined,
             })
           } catch (error: any) {
             console.error("Error creating user:", error)
@@ -282,7 +283,7 @@ function AppContent({
         </div>
       ) : (
         <>
-          <div className="max-w-md mx-auto min-h-screen bg-[#FAF9F6] relative">
+          <div className="max-w-md mx-auto bg-[#FAF9F6] relative">
             <div className="absolute top-4 right-4 z-50 flex gap-2 items-center">
               {currentUser && <RoleToggle currentUser={currentUser} />}
               <UserButton afterSignOutUrl="/" />

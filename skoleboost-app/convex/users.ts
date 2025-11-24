@@ -34,6 +34,7 @@ export const createUser = mutation({
         grade: v.string(),
         role: v.optional(v.union(v.literal("student"), v.literal("teacher"))),
         clerkUserId: v.optional(v.string()),
+        imageUrl: v.optional(v.string()),
       },
       handler: async (ctx, args) => {
         // Try to get user ID from args first (fallback from frontend)
@@ -66,6 +67,10 @@ export const createUser = mutation({
           if (!existingUser.role || args.role) {
             updates.role = role;
           }
+          // Update imageUrl if provided
+          if (args.imageUrl) {
+            updates.imageUrl = args.imageUrl;
+          }
           await ctx.db.patch(existingUser._id, updates);
           return existingUser._id;
         }
@@ -91,6 +96,7 @@ export const createUser = mutation({
           rank: role === "student" ? rank : 0,
           totalStudents: rank,
           role,
+          imageUrl: args.imageUrl,
         });
 
         return userId;

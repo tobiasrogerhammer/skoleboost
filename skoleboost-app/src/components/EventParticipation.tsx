@@ -105,17 +105,17 @@ export function EventParticipation() {
 
       {/* Enhanced Participation Stats */}
       <div className="grid grid-cols-3 gap-3 mb-5 text-center">
-        <div className="p-4 rounded-xl border-2 shadow-lg transition-all hover:scale-105" style={{ background: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 20px rgba(78, 205, 196, 0.3)' }}>
+        <div className="p-3 rounded-xl border-2 shadow-lg transition-all hover:scale-105 overflow-hidden" style={{ background: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 20px rgba(78, 205, 196, 0.3)' }}>
           <div className="text-2xl font-extrabold text-white drop-shadow-lg mb-1">{participatedEvents.length}</div>
-          <div className="text-xs text-white font-semibold uppercase tracking-wide">Arrangementer Deltatt</div>
+          <div className="text-[8px] text-white font-semibold uppercase leading-tight" style={{ wordBreak: 'break-word', hyphens: 'auto', lineHeight: '1.1' }}>Deltatt<br />arrangementer</div>
         </div>
-        <div className="p-4 rounded-xl border-2 shadow-lg transition-all hover:scale-105" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 20px rgba(0, 167, 179, 0.3)' }}>
+        <div className="p-3 rounded-xl border-2 shadow-lg transition-all hover:scale-105 overflow-hidden" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 20px rgba(0, 167, 179, 0.3)' }}>
           <div className="text-2xl font-extrabold text-white drop-shadow-lg mb-1">{participationRate}%</div>
-          <div className="text-xs text-white font-semibold uppercase tracking-wide">Deltakelse</div>
+          <div className="text-[8px] text-white font-semibold uppercase leading-tight" style={{ wordBreak: 'break-word', hyphens: 'auto', lineHeight: '1.1' }}>Deltakelse<br />prosent</div>
         </div>
-        <div className="p-4 rounded-xl border-2 shadow-lg transition-all hover:scale-105" style={{ background: 'linear-gradient(135deg, #E8A5FF 0%, #C77DFF 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 20px rgba(232, 165, 255, 0.3)' }}>
+        <div className="p-3 rounded-xl border-2 shadow-lg transition-all hover:scale-105 overflow-hidden" style={{ background: 'linear-gradient(135deg, #E8A5FF 0%, #C77DFF 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 20px rgba(232, 165, 255, 0.3)' }}>
           <div className="text-2xl font-extrabold text-white drop-shadow-lg mb-1">{totalEvents}</div>
-          <div className="text-xs text-white font-semibold uppercase tracking-wide">Totalt Invitert</div>
+          <div className="text-[8px] text-white font-semibold uppercase leading-tight" style={{ wordBreak: 'break-word', hyphens: 'auto', lineHeight: '1.1' }}>Invitert<br />totalt</div>
         </div>
       </div>
 

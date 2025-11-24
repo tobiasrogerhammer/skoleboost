@@ -24,6 +24,7 @@ export const createUserInternal = internalMutation({
     email: v.string(),
     grade: v.string(),
     studentId: v.string(),
+    imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const totalStudents = await ctx.db.query("users").collect();
@@ -40,6 +41,20 @@ export const createUserInternal = internalMutation({
       attendanceRate: 0,
       rank,
       totalStudents: rank,
+      imageUrl: args.imageUrl,
+    });
+  },
+});
+
+// Internal mutation to update user image
+export const updateUserImage = internalMutation({
+  args: {
+    userId: v.id("users"),
+    imageUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      imageUrl: args.imageUrl,
     });
   },
 });
@@ -56,7 +71,7 @@ export const clerkWebhook = httpAction(async (ctx, request) => {
   const evt = wh.verify(payload, headers) as any;
 
   if (evt.type === "user.created" || evt.type === "user.updated") {
-    const { id, email_addresses, first_name, last_name } = evt.data;
+    const { id, email_addresses, first_name, last_name, image_url } = evt.data;
     const email = email_addresses[0]?.email_address;
 
     if (!email) return new Response("No email", { status: 400 });
@@ -73,7 +88,16 @@ export const clerkWebhook = httpAction(async (ctx, request) => {
         email,
         grade: "",
         studentId: id,
+        imageUrl: image_url || undefined,
       });
+    } else {
+      // Update existing user's imageUrl if it changed
+      if (image_url && existingUser.imageUrl !== image_url) {
+        await ctx.runMutation(api.auth.updateUserImage, {
+          userId: existingUser._id,
+          imageUrl: image_url,
+        });
+      }
     }
   }
 

@@ -14,6 +14,7 @@ export default defineSchema({
     rank: v.number(),
     totalStudents: v.number(),
     role: v.optional(v.union(v.literal("student"), v.literal("teacher"))),
+    imageUrl: v.optional(v.string()),
   }),
 
   coupons: defineTable({
@@ -63,7 +64,7 @@ export default defineSchema({
 
   eventRegistrations: defineTable({
     userId: v.id("users"),
-    eventId: v.id("scheduleItems"),
+    eventId: v.union(v.id("scheduleItems"), v.id("socialEvents")),
     registeredAt: v.number(),
   }).index("by_user", ["userId"]).index("by_event", ["eventId"]),
 
@@ -106,5 +107,12 @@ export default defineSchema({
     markedBy: v.optional(v.id("users")), // Optional for self-marked attendance
     markedAt: v.number(),
   }).index("by_student", ["studentId"]).index("by_class", ["classId"]).index("by_date", ["date"]).index("by_student_schedule", ["studentId", "scheduleItemId", "date"]),
+
+  eventComments: defineTable({
+    eventId: v.union(v.id("scheduleItems"), v.id("socialEvents")),
+    userId: v.id("users"),
+    message: v.string(),
+    createdAt: v.number(),
+  }).index("by_event", ["eventId"]).index("by_user", ["userId"]),
 });
 

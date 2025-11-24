@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Clock, MapPin, Coins, CheckCircle, XCircle, Camera, Palette, Music, TreePine, Gamepad2, Users, UserPlus, UserCheck, MessageCircle, Image, Heart, ChevronRight, Calendar } from 'lucide-react'
+import { Clock, MapPin, Coins, CheckCircle, XCircle, Camera, Palette, Music, TreePine, Gamepad2, Users, UserPlus, UserCheck, MessageCircle, Image, Heart, ChevronRight, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
@@ -10,6 +10,8 @@ import { Textarea } from './ui/textarea'
 import { Avatar } from './ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { toast } from 'sonner'
+import { Logo } from './Logo'
+import { EventCard } from './EventCard'
 
 interface Comment {
   id: string
@@ -350,13 +352,48 @@ const mockSchedule: ScheduleItem[] = [
 
 export function SchedulePage() {
   const scheduleData = useQuery(api.schedule.getByUser) || []
+  const socialEventsQuery = useQuery(api.events.getAll) || []
+  
+  // Sort events by date
+  const socialEvents = useMemo(() => {
+    const parseDate = (dateStr: string): Date => {
+      // Parse "DD. MMM" format (e.g., "15. okt")
+      const parts = dateStr.split('. ')
+      if (parts.length !== 2) return new Date(0) // Invalid date, put at end
+      
+      const day = parseInt(parts[0], 10)
+      const monthStr = parts[1].toLowerCase()
+      const monthMap: { [key: string]: number } = {
+        'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mai': 4, 'jun': 5,
+        'jul': 6, 'aug': 7, 'sep': 8, 'okt': 9, 'nov': 10, 'des': 11
+      }
+      const month = monthMap[monthStr] ?? 0
+      
+      // Events are seeded for 2025 (nov-des), so use 2025 as the year
+      const eventYear = 2025
+      return new Date(eventYear, month, day)
+    }
+    
+    return [...socialEventsQuery].sort((a: any, b: any) => {
+      const dateA = parseDate(a.date || '')
+      const dateB = parseDate(b.date || '')
+      if (dateA.getTime() === dateB.getTime()) {
+        // If same date, sort by time
+        const timeA = a.time || '00:00'
+        const timeB = b.time || '00:00'
+        return timeA.localeCompare(timeB)
+      }
+      return dateA.getTime() - dateB.getTime()
+    })
+  }, [socialEventsQuery])
   const markAttendedMutation = useMutation(api.schedule.markAttended)
   const registerEventMutation = useMutation(api.events.register)
   const setupScheduleMutation = useMutation(api.schedule.setupDefaultSchedule)
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null)
-  const [newComment, setNewComment] = useState('')
+  const userRegistrations = useQuery(api.events.getUserRegistrations) || []
+  const registeredEventsSet = useMemo(() => new Set(userRegistrations), [userRegistrations])
   const [timeRemaining, setTimeRemaining] = useState<{ hours: number; minutes: number; seconds: number } | null>(null)
   const [isSettingUp, setIsSettingUp] = useState(false)
+  const [showAllEvents, setShowAllEvents] = useState(false)
   
   // Get current day name
   const getDayName = useCallback(() => {
@@ -389,14 +426,24 @@ export function SchedulePage() {
     const tomorrowName = days[tomorrowIndex]
     return scheduleData.filter((item: any) => item.day === tomorrowName)
   }, [scheduleData])
-  const upcomingEvents = useMemo(() => 
-    scheduleData.filter((item: any) => 
-      ['Fredag', 'Lørdag'].includes(item.day) && 
-      (item.type === 'event' || item.type === 'trip') &&
-      item.subject !== 'Lunsj'
-    ), 
-    [scheduleData]
-  )
+  // Use socialEvents to show same events as MainPage
+  const upcomingEvents = useMemo(() => {
+    // Convert socialEvents to same format as schedule events for EventCard
+    return socialEvents.map((event: any) => ({
+      _id: event._id,
+      subject: event.title,
+      description: event.description,
+      day: event.date,
+      time: event.time,
+      room: '',
+      emoji: event.emoji,
+      colorTheme: event.colorTheme,
+      capacity: event.capacity,
+      registered: event.registered,
+      isRegistered: registeredEventsSet.has(event._id.toString()),
+      type: 'event' as const,
+    }))
+  }, [socialEvents, registeredEventsSet])
   
   // Auto-setup schedule if empty
   React.useEffect(() => {
@@ -478,21 +525,12 @@ export function SchedulePage() {
     try {
       const result = await registerEventMutation({ eventId: eventId as any })
       toast.success(result.registered ? 'Påmeldt arrangement!' : 'Avmeldt fra arrangement')
-      // Refresh selected event if it's the one we just registered for
-      if (selectedEvent && (selectedEvent._id === eventId || selectedEvent.id === eventId)) {
-        setSelectedEvent({ ...selectedEvent, isRegistered: result.registered })
-      }
+      // The query will automatically refetch and update registeredEventsSet
     } catch (error: any) {
       toast.error(error.message || 'Noe gikk galt')
     }
   }
 
-  const handleAddComment = (eventId: string) => {
-    if (!newComment.trim()) return
-    // TODO: Implement comment functionality in Convex
-    setNewComment('')
-    toast.success('Kommentar lagt til!')
-  }
 
   const getItemIcon = (item: any) => {
     if (item.type === 'event') {
@@ -562,7 +600,7 @@ export function SchedulePage() {
   }
 
   return (
-    <div className="pb-20 px-4 max-w-md mx-auto space-y-6" style={{ paddingTop: '2.5rem' }}>
+    <div className="px-4 max-w-md mx-auto space-y-6 relative" style={{ paddingTop: '2.5rem', paddingBottom: '200px' }}>
       <style>{`
         [data-slot="select-content"] [data-slot="select-item"] > span.absolute,
         [data-slot="select-content"] [data-slot="select-item"] svg,
@@ -570,14 +608,14 @@ export function SchedulePage() {
           display: none !important;
         }
       `}</style>
-      {/* Enhanced Header */}
-      <div className="text-center mb-6">
-        <h1 className="mb-1 font-bold text-2xl" style={{ color: '#006C75' }}>Din Timeplan</h1>
-        <p className="text-sm font-medium mb-1" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>Følg oppmøte og tjen poeng! 💪</p>
+      {/* Logo and Brand Name - Top Left */}
+      <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <Logo size="xs" />
+        <h1 className="font-bold text-base" style={{ color: '#006C75' }}>Skoleboost</h1>
       </div>
 
       {/* Enhanced Selected Day's Stats */}
-      <Card className="p-5 border-2 shadow-2xl transition-all duration-300 hover:shadow-3xl" style={{ 
+      <Card className="p-5 mt-8 border-2 shadow-2xl transition-all duration-300 hover:shadow-3xl" style={{ 
         background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 50%, #4ECDC4 100%)', 
         borderColor: 'rgba(255, 255, 255, 0.3)', 
         borderRadius: '20px', 
@@ -613,15 +651,15 @@ export function SchedulePage() {
 
       {/* Day Selector */}
       <Card className="p-4 border-2 shadow-lg" style={{ 
-        background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.05), #E8F6F6, rgba(0, 167, 179, 0.05))', 
-        borderColor: 'rgba(0, 167, 179, 0.3)', 
+        background: 'linear-gradient(135deg, #FBBE9E, #FF9F66, #FBBE9E)', 
+        borderColor: 'rgba(255, 159, 102, 0.6)', 
         borderRadius: '16px',
-        boxShadow: '0 4px 12px rgba(0, 167, 179, 0.1)'
+        boxShadow: '0 4px 12px rgba(255, 159, 102, 0.3)'
       }}>
         <div>
-          <label className="text-xs font-semibold block mb-1" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Velg dag</label>
+          <label className="text-xs font-semibold block mb-1" style={{ color: 'white' }}>Velg dag</label>
           <div className="flex gap-3 items-center">
-            <div className="p-3 rounded-lg flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }}>
+            <div className="p-3 rounded-lg flex-shrink-0" style={{ background: 'rgba(255, 255, 255, 0.3)', backdropFilter: 'blur(10px)' }}>
               <Calendar className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1">
@@ -629,11 +667,11 @@ export function SchedulePage() {
               <SelectTrigger 
                 className="flex-1 font-semibold transition-all duration-200 hover:shadow-md" 
                 style={{ 
-                  color: '#006C75',
+                  color: '#FF9F66',
                   backgroundColor: 'white',
-                  borderColor: 'rgba(0, 167, 179, 0.3)',
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
                   borderWidth: '2px',
-                  boxShadow: '0 2px 8px rgba(0, 167, 179, 0.15)'
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
                 }}
               >
                 <SelectValue />
@@ -641,8 +679,8 @@ export function SchedulePage() {
               <SelectContent 
                 className="bg-white border-2 shadow-xl rounded-lg [&_button[data-slot='select-scroll-up-button']]:hidden [&_button[data-slot='select-scroll-down-button']]:hidden [&_[data-slot='select-item']>span.absolute]:!hidden [&_[data-slot='select-item']_svg]:!hidden [&_[data-slot='select-item']_[data-radix-select-item-indicator]]:!hidden"
                 style={{ 
-                  borderColor: 'rgba(0, 167, 179, 0.2)',
-                  boxShadow: '0 8px 24px rgba(0, 167, 179, 0.2)'
+                  borderColor: 'rgba(251, 190, 158, 0.3)',
+                  boxShadow: '0 8px 24px rgba(251, 190, 158, 0.25)'
                 }}
               >
                 {daysOfWeek.map((day, index) => {
@@ -654,21 +692,21 @@ export function SchedulePage() {
                       value={day}
                       className="transition-all duration-150 cursor-pointer [&>span.absolute]:!hidden [&_svg]:!hidden !pr-4"
                       style={{ 
-                        color: isSelected ? '#00A7B3' : (isToday ? '#00A7B3' : '#006C75'),
-                        backgroundColor: isSelected ? 'rgba(0, 167, 179, 0.1)' : 'white',
+                        color: isSelected ? '#FF9F66' : (isToday ? '#FF9F66' : '#006C75'),
+                        backgroundColor: isSelected ? 'rgba(251, 190, 158, 0.15)' : 'white',
                         fontWeight: isSelected ? '700' : (isToday ? '600' : '500'),
-                        borderLeft: isSelected ? '3px solid #00A7B3' : '3px solid transparent',
-                        borderBottom: index < daysOfWeek.length - 1 ? '1px solid rgba(0, 167, 179, 0.25)' : 'none',
+                        borderLeft: isSelected ? '3px solid #FF9F66' : '3px solid transparent',
+                        borderBottom: index < daysOfWeek.length - 1 ? '1px solid rgba(251, 190, 158, 0.3)' : 'none',
                         padding: '10px 16px',
                         margin: '0'
                       }}
                       onMouseEnter={(e) => {
                         if (!isSelected) {
-                          e.currentTarget.style.backgroundColor = isToday ? 'rgba(0, 167, 179, 0.1)' : 'rgba(0, 167, 179, 0.05)'
+                          e.currentTarget.style.backgroundColor = isToday ? 'rgba(251, 190, 158, 0.15)' : 'rgba(251, 190, 158, 0.08)'
                         }
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = isSelected ? 'rgba(0, 167, 179, 0.1)' : 'white'
+                        e.currentTarget.style.backgroundColor = isSelected ? 'rgba(251, 190, 158, 0.15)' : 'white'
                       }}
                     >
                       <span className="flex items-center justify-between w-full gap-2">
@@ -676,7 +714,7 @@ export function SchedulePage() {
                         {isToday && (
                           <span 
                             className="flex-shrink-0 w-2 h-2 rounded-full" 
-                            style={{ backgroundColor: '#00A7B3' }}
+                            style={{ backgroundColor: '#FF9F66' }}
                             title="I dag"
                           />
                         )}
@@ -690,7 +728,7 @@ export function SchedulePage() {
           </div>
         </div>
         {scheduleData.length === 0 && (
-          <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(0, 167, 179, 0.2)' }}>
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.3)' }}>
             <Button
               onClick={async () => {
                 setIsSettingUp(true)
@@ -705,7 +743,7 @@ export function SchedulePage() {
               }}
               disabled={isSettingUp}
               className="w-full"
-              style={{ backgroundColor: '#00A7B3', color: 'white' }}
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', color: '#FF9F66', fontWeight: '600' }}
             >
               {isSettingUp ? 'Oppretter timeplan...' : 'Sett opp timeplan'}
             </Button>
@@ -789,33 +827,18 @@ export function SchedulePage() {
                 }}
               >
                 {isFirstUpcoming && timeRemaining && (
-                  <div className="mb-3 p-3 rounded-xl border-2 border-white/30" style={{ 
+                  <div className="px-3 py-2 rounded-xl border-2 border-white/30" style={{ 
                     background: 'linear-gradient(135deg, #00A7B3, #00C4D4)', 
                     boxShadow: '0 4px 16px rgba(0, 167, 179, 0.4)'
                   }}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-white/20 backdrop-blur-sm">
-                          <Clock className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="text-white font-bold text-sm">Neste time starter om:</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {timeRemaining.hours > 0 && (
-                          <div className="bg-white/30 backdrop-blur-md px-3 py-2 rounded-lg text-center min-w-[50px] border border-white/20 shadow-sm">
-                            <div className="text-white font-extrabold text-lg leading-none">{timeRemaining.hours}</div>
-                            <div className="text-white/90 text-[10px] font-semibold mt-1">t{timeRemaining.hours !== 1 ? 'imer' : 'ime'}</div>
-                          </div>
-                        )}
-                        <div className="bg-white/30 backdrop-blur-md px-3 py-2 rounded-lg text-center min-w-[50px] border border-white/20 shadow-sm">
-                          <div className="text-white font-extrabold text-lg leading-none">{timeRemaining.minutes}</div>
-                          <div className="text-white/90 text-[10px] font-semibold mt-1">min{timeRemaining.minutes !== 1 ? 'utter' : 'utt'}</div>
-                    </div>
-                        <div className="bg-white/30 backdrop-blur-md px-3 py-2 rounded-lg text-center min-w-[50px] border border-white/20 shadow-sm">
-                          <div className="text-white font-extrabold text-lg leading-none">{timeRemaining.seconds}</div>
-                          <div className="text-white/90 text-[10px] font-semibold mt-1">sek</div>
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-white flex-shrink-0" />
+                      <span className="text-white/90 font-medium text-xs">
+                        Neste time starter om:
+                      </span>
+                      <span className="text-white font-extrabold text-sm whitespace-nowrap px-2 py-0.5 rounded-md bg-white/20">
+                        {timeRemaining.hours > 0 && `${timeRemaining.hours}t : `}{timeRemaining.minutes}min : {timeRemaining.seconds}s
+                      </span>
                     </div>
                   </div>
                 )}
@@ -872,21 +895,6 @@ export function SchedulePage() {
                         </div>
                       </div>
                     </div>
-                        {item.subject !== 'Lunsj' && (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={() => setSelectedEvent(item)}
-                            className="text-white hover:bg-white/20"
-                              >
-                            <MessageCircle className="w-4 h-4 mr-1" />
-                            Se Detaljer
-                              </Button>
-                            </DialogTrigger>
-                          </Dialog>
-                        )}
                   </div>
                 )}
               </Card>
@@ -905,185 +913,60 @@ export function SchedulePage() {
             <div className="h-1 flex-1 rounded-full" style={{ background: 'linear-gradient(90deg, #006C75, #00A7B3)' }}></div>
           </div>
           <div className="space-y-3">
-            {upcomingEvents.map((event: any) => {
-              const eventStyle = getItemStyles(event)
-              
+            {(showAllEvents ? upcomingEvents : upcomingEvents.slice(0, 5)).map((event: any) => {
+              const eventIdString = typeof event._id === 'string' ? event._id : event._id.toString()
               return (
-                <Card 
-                  key={event._id} 
-                  className="p-3 border-2 cursor-pointer active:scale-[0.98] transition-all duration-200" 
-                  style={{ 
-                    background: eventStyle.background, 
-                    borderColor: eventStyle.borderColor,
-                    borderRadius: '12px'
+                <EventCard
+                  key={event._id}
+                  event={{
+                    _id: event._id,
+                    subject: event.subject,
+                    description: event.description,
+                    day: event.day,
+                    time: event.time,
+                    room: event.room,
+                    emoji: event.emoji,
+                    colorTheme: event.colorTheme,
+                    capacity: event.capacity,
+                    registered: event.registered,
+                    isRegistered: registeredEventsSet.has(eventIdString) || event.isRegistered,
                   }}
-                  onClick={() => setSelectedEvent(event)}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <span className="text-2xl flex-shrink-0">{event.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-white font-bold text-base mb-1 drop-shadow-lg line-clamp-1">{event.subject}</h4>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <Badge className="text-xs bg-white/40 text-white border-white/50 backdrop-blur-md font-bold px-1.5 py-0.5">
-                            {event.day}
-                          </Badge>
-                          <div className="text-white font-semibold bg-white/40 px-2 py-0.5 rounded-full backdrop-blur-md text-xs">
-                            ⏰ {event.time}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 text-white/90 flex-shrink-0">
-                      <span className="text-xs font-semibold">Se detaljer</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                </Card>
+                  eventType="scheduleItem"
+                  onRSVP={handleRSVP}
+                  registeredEvents={registeredEventsSet}
+                />
               )
             })}
           </div>
+          {upcomingEvents.length > 5 && (
+            <Button
+              onClick={() => setShowAllEvents(!showAllEvents)}
+              className="w-full mt-4 flex items-center justify-center gap-2 hover:bg-opacity-10 transition-all"
+              style={{
+                background: 'transparent',
+                color: '#006C75',
+                border: '2px solid rgba(0, 108, 117, 0.3)',
+                borderRadius: '12px',
+                padding: '12px',
+                fontWeight: '600'
+              }}
+            >
+              {showAllEvents ? (
+                <>
+                  <ChevronUp className="w-5 h-5" />
+                  Vis færre
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-5 h-5" />
+                  Se alle arrangementer ({upcomingEvents.length})
+                </>
+              )}
+            </Button>
+          )}
         </div>
       )}
 
-      {/* Event Detail Modal */}
-      {selectedEvent && (
-        <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedEvent.emoji && <span className="text-xl">{selectedEvent.emoji}</span>}
-                {selectedEvent.subject}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              {/* Event Info */}
-              <div className="p-4 border-2 rounded-lg" style={{ background: 'linear-gradient(to bottom right, #E8F6F6, white)', borderColor: 'rgba(0, 167, 179, 0.3)' }}>
-                <p className="text-sm mb-3 font-medium" style={{ color: '#006C75' }}>{selectedEvent.description}</p>
-                <div className="flex items-center gap-4 text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{selectedEvent.time}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" />
-                    <span>{selectedEvent.room}</span>
-                  </div>
-                </div>
-                {selectedEvent.capacity && (
-                  <div className="mt-3 text-sm">
-                    <span className="font-medium" style={{ color: '#006C75' }}>Kapasitet: </span>
-                    <span className="font-bold text-lg" style={{ color: (selectedEvent.registered || 0) >= selectedEvent.capacity ? '#FBBE9E' : '#00A7B3' }}>
-                      {selectedEvent.registered}/{selectedEvent.capacity}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* RSVP Section */}
-              <div className="flex gap-2">
-                <Button
-                  variant={selectedEvent.isRegistered ? "outline" : "secondary"}
-                  onClick={() => handleRSVP(selectedEvent._id)}
-                  disabled={!selectedEvent.isRegistered && (selectedEvent.registered || 0) >= (selectedEvent.capacity || 0)}
-                  className="flex-1"
-                >
-                  {selectedEvent.isRegistered ? (
-                    <><UserCheck className="w-4 h-4 mr-2" />Påmeldt</>
-                  ) : (selectedEvent.registered || 0) >= (selectedEvent.capacity || 0) ? (
-                    'Arrangement Fullt'
-                  ) : (
-                    <><UserPlus className="w-4 h-4 mr-2" />Meld deg på nå</>
-                  )}
-                </Button>
-              </div>
-
-              {/* Photos Section */}
-              {selectedEvent.photos && selectedEvent.photos.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <Image className="w-4 h-4" />
-                    Arrangementsbilder
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {selectedEvent.photos.map((photo) => (
-                      <div key={photo.id} className="space-y-1">
-                        <img 
-                          src={photo.url} 
-                          alt={photo.caption}
-                          className="w-full h-24 object-cover rounded-lg"
-                        />
-                        <div className="text-xs">
-                          <p className="font-bold" style={{ color: '#006C75' }}>{photo.author}</p>
-                          <p className="font-medium" style={{ color: 'rgba(0, 108, 117, 0.8)' }}>{photo.caption}</p>
-                          <div className="flex items-center gap-1 mt-1">
-                            <Heart className="w-3 h-3" style={{ color: '#FF6B9D', fill: '#FF6B9D' }} />
-                            <span className="font-medium" style={{ color: '#006C75' }}>{photo.likes}</span>
-                            <span style={{ color: 'rgba(0, 108, 117, 0.6)' }}>• {photo.timestamp}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Comments Section */}
-              <div>
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  Kommentarer ({selectedEvent.comments?.length || 0})
-                </h4>
-                
-                <div className="space-y-3 mb-3 max-h-40 overflow-y-auto">
-                  {selectedEvent.comments?.map((comment) => (
-                    <div key={comment.id} className="flex gap-2">
-                      <Avatar className="w-6 h-6 text-xs">
-                        {comment.author.charAt(0)}
-                      </Avatar>
-                      <div className="flex-1 text-sm">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold" style={{ color: '#006C75' }}>{comment.author}</span>
-                          <span className="text-xs" style={{ color: 'rgba(0, 108, 117, 0.6)' }}>{comment.timestamp}</span>
-                        </div>
-                        <p className="font-medium" style={{ color: 'rgba(0, 108, 117, 0.9)' }}>{comment.message}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add Comment */}
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Legg til en kommentar..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="flex-1 min-h-[60px] resize-none"
-                  />
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleAddComment(selectedEvent._id)}
-                    disabled={!newComment.trim()}
-                  >
-                    Publiser
-                  </Button>
-                </div>
-              </div>
-
-              {/* Participation Stats */}
-              {selectedEvent.participationCount && (
-                <div className="text-center p-3 rounded-lg border" style={{ backgroundColor: '#E8F6F6', borderColor: 'rgba(0, 167, 179, 0.2)' }}>
-                  <div className="text-lg font-bold" style={{ color: '#006C75' }}>{selectedEvent.participationCount}</div>
-                  <div className="text-xs text-muted-foreground">
-                    elever har deltatt i lignende arrangementer
-                  </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   )
 }
