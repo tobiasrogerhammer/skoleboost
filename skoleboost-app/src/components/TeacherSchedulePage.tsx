@@ -376,84 +376,188 @@ function AttendanceDialog({
     }
   }
 
+  const getStatusCounts = () => {
+    const counts = { present: 0, late: 0, absent: 0, unregistered: 0 }
+    classStudents.forEach((student: any) => {
+      const status = attendance[student._id]
+      if (status === 'present') counts.present++
+      else if (status === 'late') counts.late++
+      else if (status === 'absent') counts.absent++
+      else counts.unregistered++
+    })
+    return counts
+  }
+
+  const counts = getStatusCounts()
+
   return (
     <Dialog open onOpenChange={onClose} key={`${scheduleItem._id}-${attendanceDate}`}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-h-[90vh] overflow-y-auto"
+        style={{ maxWidth: '95vw', width: '95vw', overflowX: 'hidden' }}
+      >
         <DialogHeader>
-          <DialogTitle>Oppmøte {scheduleItem.subject}</DialogTitle>
-          <DialogDescription>
-            Marker oppmøte for hver elev (M = Møtt, G = Gyldig fravær, U = Ugyldig fravær)
+          <DialogTitle className="text-xl font-extrabold" style={{ color: '#006C75' }}>
+            Oppmøte - {scheduleItem.subject}
+          </DialogTitle>
+          <DialogDescription className="text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+            {attendanceDate}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm font-bold pb-2 border-b" style={{ color: '#006C75', borderColor: 'rgba(0, 108, 117, 0.2)' }}>
-            <div className="flex-1">Navn</div>
-            <div className="flex items-center gap-4">
-              <div className="w-12 text-center">
-                <span className="text-green-600 font-extrabold">M</span>
+        
+        {/* Legend */}
+        <div className="flex items-center justify-center mb-4 p-4 rounded-lg border" style={{ 
+          backgroundColor: 'rgba(0, 167, 179, 0.05)',
+          borderColor: 'rgba(0, 167, 179, 0.2)'  
+        }}>
+          <div className="flex flex-col items-center gap-1" style={{ marginRight: '2rem' }}>
+            <span className="font-extrabold text-2xl text-green-600" style={{ lineHeight: '1' }}>M</span>
+            <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#006C75', lineHeight: '1' }}>Møtt</span>
               </div>
-              <div className="w-12 text-center">
-                <span className="text-orange-600 font-extrabold">G</span>
-              </div>
-              <div className="w-12 text-center">
-                <span className="text-red-600 font-extrabold">U</span>
-              </div>
-            </div>
+          <div className="flex flex-col items-center gap-1" style={{ marginRight: '2rem' }}>
+            <span className="font-extrabold text-2xl text-orange-600" style={{ lineHeight: '1' }}>G</span>
+            <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#006C75', lineHeight: '1' }}>Gyldig fravær</span>
           </div>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {classStudents.length === 0 ? (
-              <p className="text-sm text-center py-4" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-extrabold text-2xl" style={{ lineHeight: '1', color: '#EF4444' }}>U</span>
+            <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#006C75', lineHeight: '1' }}>Ugyldig fravær</span>
+          </div>
+            </div>
+
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {classStudents.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-sm font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
                 Ingen elever i denne klassen
               </p>
-            ) : (
-              classStudents.map((student: any) => (
-                <div key={student._id} className="flex items-center gap-2 py-2 border-b" style={{ borderColor: 'rgba(0, 108, 117, 0.1)' }}>
-                  <div className="text-sm flex-1 min-w-0" style={{ color: '#006C75' }}>
-                    {student.name}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-green-50 hover:scale-105" style={{ minWidth: '48px' }}>
-                      <span className="text-xs font-extrabold text-green-600">M</span>
-                      <input
-                        type="radio"
-                        name={`attendance-${student._id}`}
-                        checked={attendance[student._id] === 'present'}
-                        onChange={() => handleStatusChange(student._id, 'present')}
-                        className="w-5 h-5"
-                        style={{ accentColor: '#10B981' }}
-                      />
-                    </label>
-                    <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-orange-50 hover:scale-105" style={{ minWidth: '48px' }}>
-                      <span className="text-xs font-extrabold text-orange-600">G</span>
-                      <input
-                        type="radio"
-                        name={`attendance-${student._id}`}
-                        checked={attendance[student._id] === 'late'}
-                        onChange={() => handleStatusChange(student._id, 'late')}
-                        className="w-5 h-5"
-                        style={{ accentColor: '#F97316' }}
-                      />
-                    </label>
-                    <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-red-50 hover:scale-105" style={{ minWidth: '48px' }}>
-                      <span className="text-xs font-extrabold text-red-600">U</span>
-                      <input
-                        type="radio"
-                        name={`attendance-${student._id}`}
-                        checked={attendance[student._id] === 'absent'}
-                        onChange={() => handleStatusChange(student._id, 'absent')}
-                        className="w-5 h-5"
-                        style={{ accentColor: '#EF4444' }}
-                      />
-                    </label>
+            </div>
+          ) : (
+            classStudents.map((student: any) => {
+              const currentStatus = attendance[student._id]
+              return (
+                <div 
+                  key={student._id} 
+                  className="p-4 rounded-xl border-2 transition-all hover:shadow-lg"
+                  style={{ 
+                    backgroundColor: currentStatus === 'present' 
+                      ? 'rgba(16, 185, 129, 0.05)' 
+                      : currentStatus === 'late'
+                      ? 'rgba(249, 115, 22, 0.05)'
+                      : currentStatus === 'absent'
+                      ? 'rgba(239, 68, 68, 0.05)'
+                      : 'white',
+                    borderColor: currentStatus === 'present'
+                      ? 'rgba(16, 185, 129, 0.3)'
+                      : currentStatus === 'late'
+                      ? 'rgba(249, 115, 22, 0.3)'
+                      : currentStatus === 'absent'
+                      ? 'rgba(239, 68, 68, 0.3)'
+                      : 'rgba(0, 108, 117, 0.1)',
+                    boxShadow: currentStatus ? '0 4px 12px rgba(0, 0, 0, 0.08)' : 'none'
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-bold text-base mb-1" style={{ color: '#006C75' }}>
+                        {student.name}
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleStatusChange(student._id, 'present')}
+                        className={`px-4 py-2 rounded-lg font-extrabold text-base transition-all ${
+                          currentStatus === 'present'
+                            ? 'text-white shadow-lg scale-105'
+                            : 'text-green-600 hover:bg-green-50'
+                        }`}
+                        style={{
+                          background: currentStatus === 'present'
+                            ? 'linear-gradient(135deg, #10B981, #059669)'
+                            : 'transparent',
+                          border: currentStatus === 'present' ? 'none' : '2px solid rgba(16, 185, 129, 0.3)'
+                        }}
+                      >
+                        M
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student._id, 'late')}
+                        className={`px-4 py-2 rounded-lg font-extrabold text-base transition-all ${
+                          currentStatus === 'late'
+                            ? 'text-white shadow-lg scale-105'
+                            : 'text-orange-600 hover:bg-orange-50'
+                        }`}
+                        style={{
+                          background: currentStatus === 'late'
+                            ? 'linear-gradient(135deg, #F97316, #EA580C)'
+                            : 'transparent',
+                          border: currentStatus === 'late' ? 'none' : '2px solid rgba(249, 115, 22, 0.3)'
+                        }}
+                      >
+                        G
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student._id, 'absent')}
+                        className={`px-4 py-2 rounded-lg font-extrabold text-base transition-all ${
+                          currentStatus === 'absent'
+                            ? 'text-white shadow-lg scale-105'
+                            : 'text-red-600 hover:bg-red-50'
+                        }`}
+                        style={{
+                          background: currentStatus === 'absent'
+                            ? 'linear-gradient(135deg, #EF4444, #DC2626)'
+                            : 'transparent',
+                          border: currentStatus === 'absent' ? 'none' : '2px solid rgba(239, 68, 68, 0.3)',
+                          color: currentStatus === 'absent' ? 'white' : '#EF4444'
+                        }}
+                      >
+                        <span style={{ color: currentStatus === 'absent' ? 'white' : '#EF4444' }}>U</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-          <Button onClick={onClose} className="w-full" style={{ backgroundColor: '#00A7B3', color: 'white' }}>
-            Last opp
-          </Button>
+              )
+            })
+          )}
         </div>
+        
+        {/* Summary at bottom */}
+        <div className="mt-6 p-4 rounded-xl border-2" style={{ 
+          backgroundColor: 'rgba(0, 167, 179, 0.05)', 
+          borderColor: 'rgba(0, 167, 179, 0.2)' 
+        }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Møtt:</span>
+              <span className="text-lg font-extrabold" style={{ color: '#10B981' }}>{counts.present}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Gyldig fravær:</span>
+              <span className="text-lg font-extrabold" style={{ color: '#F97316' }}>{counts.late}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Ugyldig fravær:</span>
+              <span className="text-lg font-extrabold" style={{ color: '#EF4444' }}>{counts.absent}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Mangler registrering:</span>
+              <span className="text-lg font-extrabold" style={{ color: '#000000' }}>
+                {counts.unregistered}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <Button 
+          onClick={onClose} 
+          className="w-full mt-4 font-bold text-base py-6 shadow-lg hover:shadow-xl transition-all"
+          style={{ 
+            background: 'linear-gradient(135deg, #00A7B3, #00C4D4)', 
+            color: 'white',
+            border: 'none'
+          }}
+        >
+          Lagre oppmøte
+        </Button>
       </DialogContent>
     </Dialog>
   )

@@ -225,68 +225,151 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
         </Card>
       </div>
 
-      {/* Today's Schedule - Show only current or next class */}
+      {/* Today's Schedule - Show only current or next class, or tomorrow's first class */}
+      <div>
+        {(() => {
+          const now = currentTime
+          const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
+          const today = days[now.getDay()]
+          const tomorrowIndex = (now.getDay() + 1) % 7
+          const tomorrow = days[tomorrowIndex]
+          
+          // Get all schedule data (for finding tomorrow's classes)
+          const allScheduleData = usingMockData 
+            ? (() => {
+                const schedules: Record<string, any[]> = {
+                  'Mandag': [
+                    { _id: 's1', subject: 'Norsk', teacher: teacher?.name || 'Lærer', time: '08:00 - 09:00', room: 'Rom 201', day: 'Mandag', type: 'class' },
+                    { _id: 's2', subject: 'Samfunnsfag', teacher: teacher?.name || 'Lærer', time: '09:15 - 10:15', room: 'Rom 205', day: 'Mandag', type: 'class' },
+                    { _id: 's3', subject: 'Norsk', teacher: teacher?.name || 'Lærer', time: '10:45 - 11:30', room: 'Rom 207', day: 'Mandag', type: 'class' },
+                    { _id: 's4', subject: 'Norsk', teacher: teacher?.name || 'Lærer', time: '12:15 - 13:00', room: 'Rom 208', day: 'Mandag', type: 'class' },
+                  ],
+                  'Tirsdag': [
+                    { _id: 's5', subject: 'Norsk', teacher: teacher?.name || 'Lærer', time: '09:15 - 10:15', room: 'Rom 201', day: 'Tirsdag', type: 'class' },
+                    { _id: 's6', subject: 'Samfunnsfag', teacher: teacher?.name || 'Lærer', time: '11:30 - 12:15', room: 'Rom 205', day: 'Tirsdag', type: 'class' },
+                    { _id: 's7', subject: 'Norsk', teacher: teacher?.name || 'Lærer', time: '13:45 - 14:45', room: 'Rom 201', day: 'Tirsdag', type: 'class' },
+                  ],
+                  'Onsdag': [
+                    { _id: 's8', subject: 'Norsk', teacher: teacher?.name || 'Lærer', time: '08:00 - 09:00', room: 'Rom 201', day: 'Onsdag', type: 'class' },
+                    { _id: 's9', subject: 'Samfunnsfag', teacher: teacher?.name || 'Lærer', time: '10:00 - 11:00', room: 'Rom 205', day: 'Onsdag', type: 'class' },
+                  ],
+                  'Torsdag': [
+                    { _id: 's10', subject: 'Norsk', teacher: teacher?.name || 'Lærer', time: '09:15 - 10:15', room: 'Rom 201', day: 'Torsdag', type: 'class' },
+                    { _id: 's11', subject: 'Samfunnsfag', teacher: teacher?.name || 'Lærer', time: '13:00 - 14:00', room: 'Rom 205', day: 'Torsdag', type: 'class' },
+                  ],
+                  'Fredag': [
+                    { _id: 's12', subject: 'Norsk', teacher: teacher?.name || 'Lærer', time: '08:00 - 09:00', room: 'Rom 201', day: 'Fredag', type: 'class' },
+                    { _id: 's13', subject: 'Samfunnsfag', teacher: teacher?.name || 'Lærer', time: '11:00 - 12:00', room: 'Rom 205', day: 'Fredag', type: 'class' },
+                  ],
+                  'Lørdag': [],
+                  'Søndag': [],
+                }
+                return schedules
+              })()
+            : {} // For real data, we'd need to fetch all schedule data
+          
+          // Find current class (started but not ended) or next upcoming class in today's schedule
+          let currentOrNextClass: any = null
+          let isTomorrowClass = false
+          let displayDay = today
+          
+          if (todaySchedule.length === 0) {
+            // No classes today, find tomorrow's first class (or Monday's if weekend)
+            const targetDay = (tomorrow === 'Lørdag' || tomorrow === 'Søndag') ? 'Mandag' : tomorrow
+            const targetSchedule = allScheduleData[targetDay] || []
+            if (targetSchedule.length > 0) {
+              // Sort by time and get first class
+              const sorted = targetSchedule.sort((a: any, b: any) => {
+                const timeA = a.time.match(/(\d{2}):(\d{2})/)?.[0] || '00:00'
+                const timeB = b.time.match(/(\d{2}):(\d{2})/)?.[0] || '00:00'
+                return timeA.localeCompare(timeB)
+              })
+              currentOrNextClass = sorted[0]
+              isTomorrowClass = true
+              displayDay = targetDay
+            }
+          } else {
+            for (const item of todaySchedule) {
+              const timeMatch = item.time.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/)
+              if (!timeMatch) continue
+              
+              const startHours = parseInt(timeMatch[1])
+              const startMinutes = parseInt(timeMatch[2])
+              const endHours = parseInt(timeMatch[3])
+              const endMinutes = parseInt(timeMatch[4])
+              
+              const startTime = new Date()
+              startTime.setHours(startHours, startMinutes, 0, 0)
+              
+              const endTime = new Date()
+              endTime.setHours(endHours, endMinutes, 0, 0)
+              
+              // Check if this is the current class (started but not ended)
+              if (now >= startTime && now <= endTime) {
+                currentOrNextClass = { ...item, isCurrent: true, startTime, endTime }
+                break
+              }
+              
+              // If no current class found yet, check if this is the next upcoming class
+              if (!currentOrNextClass && now < startTime) {
+                currentOrNextClass = { ...item, isCurrent: false, startTime, endTime }
+              }
+            }
+            
+            // If no current or next class found today, find tomorrow's first class
+            if (!currentOrNextClass) {
+              const targetDay = (tomorrow === 'Lørdag' || tomorrow === 'Søndag') ? 'Mandag' : tomorrow
+              const targetSchedule = allScheduleData[targetDay] || []
+              if (targetSchedule.length > 0) {
+                const sorted = targetSchedule.sort((a: any, b: any) => {
+                  const timeA = a.time.match(/(\d{2}):(\d{2})/)?.[0] || '00:00'
+                  const timeB = b.time.match(/(\d{2}):(\d{2})/)?.[0] || '00:00'
+                  return timeA.localeCompare(timeB)
+                })
+                currentOrNextClass = sorted[0]
+                isTomorrowClass = true
+                displayDay = targetDay
+              } else {
+                // Fallback to last class of today if no tomorrow classes
+                currentOrNextClass = { ...todaySchedule[todaySchedule.length - 1], isCurrent: false }
+              }
+            }
+          }
+          
+          if (!currentOrNextClass) {
+            return (
       <div>
         <h2 className="font-bold text-lg mb-3" style={{ color: '#006C75' }}>Dagens timeplan</h2>
-        {(() => {
-          if (todaySchedule.length === 0) {
-            return (
-              <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
-                <p className="text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen timer i dag</p>
-              </Card>
+          <Card className="p-4 text-center border-2" style={{ borderColor: 'rgba(232, 165, 255, 0.3)', borderRadius: '12px' }}>
+            <p className="text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Ingen timer i dag</p>
+          </Card>
+              </div>
             )
-          }
-
-          const now = currentTime
-          
-          // Find current class (started but not ended) or next upcoming class
-          let currentOrNextClass: any = null
-          
-          for (const item of todaySchedule) {
-            const timeMatch = item.time.match(/(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})/)
-            if (!timeMatch) continue
-            
-            const startHours = parseInt(timeMatch[1])
-            const startMinutes = parseInt(timeMatch[2])
-            const endHours = parseInt(timeMatch[3])
-            const endMinutes = parseInt(timeMatch[4])
-            
-            const startTime = new Date()
-            startTime.setHours(startHours, startMinutes, 0, 0)
-            
-            const endTime = new Date()
-            endTime.setHours(endHours, endMinutes, 0, 0)
-            
-            // Check if this is the current class (started but not ended)
-            if (now >= startTime && now <= endTime) {
-              currentOrNextClass = { ...item, isCurrent: true, startTime, endTime }
-              break
-            }
-            
-            // If no current class found yet, check if this is the next upcoming class
-            if (!currentOrNextClass && now < startTime) {
-              currentOrNextClass = { ...item, isCurrent: false, startTime, endTime }
-            }
-          }
-          
-          // If no current or next class found, show the last class of the day
-          if (!currentOrNextClass) {
-            currentOrNextClass = { ...todaySchedule[todaySchedule.length - 1], isCurrent: false }
           }
           
           const item = currentOrNextClass
-          const timeMatch = item.time.match(/(\d{2}):(\d{2})/)
+              const timeMatch = item.time.match(/(\d{2}):(\d{2})/)
           const startTimeStr = timeMatch ? timeMatch[1] + ':' + timeMatch[2] : ''
           const [hours, minutes] = startTimeStr.split(':').map(Number)
-          const classTime = new Date()
-          classTime.setHours(hours, minutes, 0, 0)
-          const diffMs = classTime.getTime() - now.getTime()
-          const diffMins = Math.floor(diffMs / 60000)
-          const diffHours = Math.floor(diffMins / 60)
-          const remainingMins = diffMins % 60
+          
+          // For tomorrow's classes, calculate time until tomorrow at that time
+          let classTime = new Date()
+          if (isTomorrowClass) {
+            // Set to target day at the class time
+            const targetDayIndex = days.indexOf(displayDay)
+            let daysUntilTarget = (targetDayIndex - now.getDay() + 7) % 7
+            if (daysUntilTarget === 0) daysUntilTarget = 7 // If same day, it's next week
+            classTime.setDate(now.getDate() + daysUntilTarget)
+          }
+              classTime.setHours(hours, minutes, 0, 0)
+          
+              const diffMs = classTime.getTime() - now.getTime()
+              const diffMins = Math.floor(diffMs / 60000)
+              const diffHours = Math.floor(diffMins / 60)
+              const remainingMins = diffMins % 60
 
-          let timeText = ''
-          if (item.isCurrent) {
+              let timeText = ''
+          if (item.isCurrent && !isTomorrowClass) {
             // Calculate time until end of class
             const endTime = item.endTime || classTime
             const endDiffMs = endTime.getTime() - now.getTime()
@@ -302,14 +385,32 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
               timeText = 'Pågår nå'
             }
           } else {
-            if (diffMins < 0) {
-              timeText = 'Timer startet'
-            } else if (diffHours > 0) {
-              timeText = `${diffHours}t ${remainingMins}min til timen`
+            // For tomorrow's classes or upcoming today's classes
+            if (isTomorrowClass) {
+              const daysUntil = Math.floor(diffHours / 24)
+              const hoursUntil = diffHours % 24
+              if (daysUntil > 0) {
+                timeText = `${daysUntil} ${daysUntil === 1 ? 'dag' : 'dager'} og ${hoursUntil}t til timen`
+              } else if (diffHours > 0) {
+                timeText = `${diffHours}t ${remainingMins}min til timen`
+              } else {
+                timeText = `${diffMins}min til timen`
+              }
             } else {
-              timeText = `${diffMins}min til timen`
+              if (diffMins < 0) {
+                timeText = 'Timer startet'
+              } else if (diffHours > 0) {
+                timeText = `${diffHours}t ${remainingMins}min til timen`
+              } else {
+                timeText = `${diffMins}min til timen`
+              }
             }
           }
+          
+          // Determine title based on whether it's tomorrow's class
+          const sectionTitle = isTomorrowClass 
+            ? `${displayDay}s første time` 
+            : 'Dagens timeplan'
 
           // Determine if this is Samfunnsfag (orange) or other subject (purple)
           const isSamfunnsfag = item.subject === 'Samfunnsfag'
@@ -325,48 +426,63 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
             ? '#FF9F66'
             : '#C77DFF'
 
-          return (
-            <Card
-              key={item._id}
-              className="p-3 border-2"
-              style={{
-                background: cardBg,
-                borderColor: cardBorder,
-                borderRadius: '12px',
-              }}
-            >
-              <div className="flex items-start justify-between mb-2 gap-2">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm truncate" style={{ color: '#006C75' }}>
-                    {item.subject}
-                  </h4>
-                  <p className="text-xs mt-0.5" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                    {timeText}
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => setSelectedScheduleItem(item)}
+              return (
+            <>
+              <h2 className="font-bold text-lg mb-3" style={{ color: '#006C75' }}>{sectionTitle}</h2>
+                <Card
+                  key={item._id}
+                  className="p-3 border-2"
+                  style={{
+                  background: cardBg,
+                  borderColor: cardBorder,
+                    borderRadius: '12px',
+                  }}
+                >
+                {isTomorrowClass && (
+                  <div className="px-3 py-2 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">✅</span>
+                      <p className="text-xs font-semibold" style={{ color: '#006C75' }}>
+                        Dagens timeplan er ferdig! Her er {displayDay === 'Mandag' && (tomorrow === 'Lørdag' || tomorrow === 'Søndag') 
+                          ? 'mandagens' 
+                          : 'morgendagens'} første time:
+                      </p>
+                    </div>
+                  </div>
+                )}
+                  <div className="flex items-start justify-between mb-2 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm truncate" style={{ color: '#006C75' }}>
+                        {item.subject}
+                      </h4>
+                      <p className="text-xs mt-0.5" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                        {timeText}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => setSelectedScheduleItem(item)}
                   className="text-xs"
                   style={{ backgroundColor: buttonBg, color: 'white' }}
-                >
-                  <CheckCircle className="w-3 h-3 mr-1" />
+                    >
+                      <CheckCircle className="w-3 h-3 mr-1" />
                   Ta Oppmøte
-                </Button>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 flex-shrink-0" />
-                  <span>{item.time}</span>
-                </div>
-                <span>•</span>
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{item.room}</span>
-                </div>
-              </div>
-            </Card>
-          )
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 flex-shrink-0" />
+                      <span>{item.time}</span>
+                    </div>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">{item.room}</span>
+                    </div>
+                  </div>
+                </Card>
+            </>
+              )
         })()}
       </div>
 
@@ -711,9 +827,9 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
               <Card
                 key={event._id}
                 className="p-4 border-2 transition-all duration-300 hover:shadow-xl hover:scale-[1.01]"
-                style={{ 
-                  background: eventStyle.bg,
-                  borderColor: eventStyle.border,
+                  style={{ 
+                    background: eventStyle.bg,
+                    borderColor: eventStyle.border, 
                   borderRadius: '16px',
                   boxShadow: '0 4px 12px rgba(0, 167, 179, 0.15)'
                 }}
@@ -722,10 +838,10 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                   {event.emoji && (
                     <span className="text-2xl flex-shrink-0">{event.emoji}</span>
                   )}
-                  <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-bold text-base drop-shadow-md line-clamp-1" style={{ color: 'white' }}>{event.title}</h4>
-                    </div>
+                      </div>
                     <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                       {event.date && (
                         <Badge className="text-xs bg-white/40 text-white border-white/50 backdrop-blur-md font-bold px-2 py-0.5">
@@ -739,12 +855,12 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                           <div className="flex items-center gap-1">
                             <Users className="w-3 h-3" />
                             <span>{event.registered || 0}/{event.capacity}</span>
-                          </div>
+                    </div>
                         </>
                       )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-1 flex-shrink-0">
+                    <div className="flex gap-1 flex-shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
@@ -829,7 +945,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
 
       {/* All Coupons Dialog */}
       <Dialog open={showAllCouponsDialog} onOpenChange={setShowAllCouponsDialog}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Alle Kuponger</DialogTitle>
           </DialogHeader>
@@ -880,7 +996,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
                           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full shadow-sm flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00A7B3, #00C4D4)' }}>
                             <Coins className="w-4 h-4 text-white" />
                             <span className="font-extrabold text-white text-sm whitespace-nowrap">{coupon.cost} pts</span>
-                          </div>
+    </div>
                         </div>
                       </div>
                     </div>
@@ -938,7 +1054,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
 
       {/* All Events Dialog */}
       <Dialog open={showAllEventsDialog} onOpenChange={setShowAllEventsDialog}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Alle Arrangementer</DialogTitle>
           </DialogHeader>
@@ -1046,7 +1162,7 @@ function CreateAnnouncementDialog({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <DialogContent className="max-w-md">
+    <DialogContent className="max-w-[90vw]">
       <DialogHeader>
         <DialogTitle>Ny kunngjøring</DialogTitle>
         <DialogDescription>
@@ -1114,7 +1230,7 @@ function EditAnnouncementDialog({ announcement, onClose }: { announcement: any, 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[90vw]">
         <DialogHeader>
           <DialogTitle>Rediger kunngjøring</DialogTitle>
           <DialogDescription>
@@ -1185,7 +1301,7 @@ function DeleteAnnouncementButton({ announcementId }: { announcementId: any }) {
       </Button>
       {showConfirm && (
         <Dialog open onOpenChange={setShowConfirm}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-[90vw]">
             <DialogHeader>
               <DialogTitle>Slett kunngjøring</DialogTitle>
               <DialogDescription>
@@ -1355,7 +1471,7 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{coupon ? 'Rediger kupong' : 'Ny kupong'}</DialogTitle>
           <DialogDescription>
@@ -1363,7 +1479,8 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          <div className="flex gap-4">
+            <div className="w-20 flex-shrink-0">
             <Label htmlFor="emoji">Emoji</Label>
             <Input
               id="emoji"
@@ -1373,7 +1490,7 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
               required
             />
           </div>
-          <div>
+            <div className="flex-1">
             <Label htmlFor="title">Tittel</Label>
             <Input
               id="title"
@@ -1381,6 +1498,7 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
               onChange={(e) => setTitle(e.target.value)}
               required
             />
+            </div>
           </div>
           <div>
             <Label htmlFor="description">Beskrivelse</Label>
@@ -1392,7 +1510,8 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
               required
             />
           </div>
-          <div>
+          <div className="flex gap-4">
+            <div className="flex-1">
             <Label htmlFor="cost">Kostnad (poeng)</Label>
             <Input
               id="cost"
@@ -1402,7 +1521,7 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
               required
             />
           </div>
-          <div>
+            <div className="flex-1">
             <Label htmlFor="category">Kategori</Label>
             <Input
               id="category"
@@ -1410,6 +1529,7 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
               onChange={(e) => setCategory(e.target.value)}
               required
             />
+            </div>
           </div>
           <div>
             <Label htmlFor="allergies">Allergier (kommaseparert)</Label>
@@ -1526,7 +1646,7 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold" style={{ color: '#006C75' }}>
             {event ? 'Rediger arrangement' : 'Nytt arrangement'}
@@ -1536,7 +1656,8 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div>
+          <div className="flex gap-4">
+            <div className="w-20 flex-shrink-0">
               <Label htmlFor="emoji" className="text-sm font-semibold" style={{ color: '#006C75' }}>Emoji</Label>
             <Input
               id="emoji"
@@ -1547,7 +1668,7 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
               required
             />
           </div>
-          <div>
+            <div className="flex-1">
             <Label htmlFor="title" className="text-sm font-semibold" style={{ color: '#006C75' }}>Tittel</Label>
             <Input
               id="title"
@@ -1557,6 +1678,7 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
               placeholder="F.eks. Gaming Turnering"
               required
             />
+            </div>
           </div>
           <div>
             <Label htmlFor="description" className="text-sm font-semibold" style={{ color: '#006C75' }}>Beskrivelse</Label>
@@ -1659,7 +1781,7 @@ function ClassStudentsDialog({
 }) {
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+      <DialogContent className="max-w-[500px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px', width: '90vw', maxWidth: '500px' }}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold" style={{ color: '#006C75' }}>
             {classObj?.name || 'Klasse'} - Elever
@@ -1668,7 +1790,7 @@ function ClassStudentsDialog({
             Navneliste med kontaktinformasjon til foresatte
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 mt-4">
+        <div className="space-y-2 mt-4">
           {classStudents.length === 0 ? (
             <p className="text-sm text-center py-4" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
               Ingen elever i denne klassen
@@ -1684,57 +1806,55 @@ function ClassStudentsDialog({
                   borderRadius: '12px'
                 }}
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #E8A5FF, #C77DFF)' }}>
-                      <span className="text-white font-bold text-sm">{index + 1}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-sm mb-1" style={{ color: '#006C75' }}>
-                        {student.name}
-                      </h4>
-                      {student.parentName && (
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <Users className="w-3 h-3" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
-                            <span className="text-xs" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
-                              {student.parentName}
-                            </span>
-                          </div>
-                          {(student.parentPhone || student.parentEmail) && (
-                            <div className="flex items-center gap-3 flex-wrap">
-                              {student.parentPhone && (
-                                <div className="flex items-center gap-1.5">
-                                  <Phone className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
-                                  <a 
-                                    href={`tel:${student.parentPhone}`}
-                                    className="text-xs hover:underline" 
-                                    style={{ color: '#00A7B3' }}
-                                  >
-                                    {student.parentPhone}
-                                  </a>
-                                </div>
-                              )}
-                              {student.parentPhone && student.parentEmail && (
-                                <span className="text-xs" style={{ color: 'rgba(0, 108, 117, 0.4)' }}>•</span>
-                              )}
-                              {student.parentEmail && (
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <Mail className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
-                                  <a 
-                                    href={`mailto:${student.parentEmail}`}
-                                    className="text-xs hover:underline truncate" 
-                                    style={{ color: '#00A7B3' }}
-                                  >
-                                    {student.parentEmail}
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          )}
+                <div className="flex items-start gap-2.5">
+                  <div className="rounded-full flex items-center justify-center flex-shrink-0 shadow-sm mr-1" style={{ background: 'linear-gradient(135deg, #E8A5FF, #C77DFF)', padding: '8px 12px', minWidth: '32px', height: '32px' }}>
+                    <span className="text-white font-bold" style={{ fontSize: '11px' }}>{index + 1}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold mb-1.5 truncate" style={{ color: '#006C75', fontSize: '15px', lineHeight: '1.3' }}>
+                      {student.name}
+                    </h4>
+                    {student.parentName && (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <Users className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
+                          <span className="truncate font-semibold" style={{ color: '#006C75', fontSize: '12px' }}>
+                            {student.parentName}
+                          </span>
                         </div>
-                      )}
-                    </div>
+                        {(student.parentPhone || student.parentEmail) && (
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {student.parentPhone && (
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                <Phone className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.6)' }} />
+                                <a 
+                                  href={`tel:${student.parentPhone}`}
+                                  className="hover:underline truncate" 
+                                  style={{ color: '#00A7B3', fontSize: '11px' }}
+                                >
+                                  {student.parentPhone}
+                                </a>
+                              </div>
+                            )}
+                            {student.parentPhone && student.parentEmail && (
+                              <span className="text-[10px] flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.4)' }}>•</span>
+                            )}
+                            {student.parentEmail && (
+                              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <Mail className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.6)' }} />
+                                <a 
+                                  href={`mailto:${student.parentEmail}`}
+                                  className="hover:underline truncate" 
+                                  style={{ color: '#00A7B3', fontSize: '11px' }}
+                                >
+                                  {student.parentEmail}
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -1833,78 +1953,180 @@ function AttendanceDialog({
     }
   }
 
+  const getStatusCounts = () => {
+    const counts = { present: 0, late: 0, absent: 0, unregistered: 0 }
+    classStudents.forEach((student: any) => {
+      const status = attendance[student._id]
+      if (status === 'present') counts.present++
+      else if (status === 'late') counts.late++
+      else if (status === 'absent') counts.absent++
+      else counts.unregistered++
+    })
+    return counts
+  }
+
+  const counts = getStatusCounts()
+
   return (
     <Dialog open onOpenChange={onClose} key={`${scheduleItem._id}-${attendanceDate}`}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-h-[90vh] overflow-y-auto"
+        style={{ maxWidth: '95vw', width: '95vw' }}
+      >
         <DialogHeader>
-          <DialogTitle>Oppmøte {scheduleItem.subject}</DialogTitle>
-          <DialogDescription>
-            Marker oppmøte for hver elev (M = Møtt, G = Gyldig fravær, U = Ugyldig fravær)
+          <DialogTitle className="text-xl font-extrabold" style={{ color: '#006C75' }}>
+            Oppmøte - {scheduleItem.subject}
+          </DialogTitle>
+          <DialogDescription className="text-sm" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+            {attendanceDate}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm font-bold pb-2 border-b" style={{ color: '#006C75', borderColor: 'rgba(0, 108, 117, 0.2)' }}>
-            <div className="flex-1">Navn</div>
-            <div className="flex items-center gap-4">
-              <div className="w-12 text-center">
-                <span className="text-green-600 font-extrabold">M</span>
+        
+        {/* Legend */}
+        <div className="flex items-center justify-center mb-4 p-4 rounded-lg border" style={{ 
+          backgroundColor: 'rgba(0, 167, 179, 0.05)',
+          borderColor: 'rgba(0, 167, 179, 0.2)'  
+        }}>
+          <div className="flex flex-col items-center gap-1" style={{ marginRight: '2rem' }}>
+            <span className="font-extrabold text-2xl text-green-600" style={{ lineHeight: '1' }}>M</span>
+            <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#006C75', lineHeight: '1' }}>Møtt</span>
               </div>
-              <div className="w-12 text-center">
-                <span className="text-orange-600 font-extrabold">G</span>
+          <div className="flex flex-col items-center gap-1" style={{ marginRight: '2rem' }}>
+            <span className="font-extrabold text-2xl text-orange-600" style={{ lineHeight: '1' }}>G</span>
+            <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#006C75', lineHeight: '1' }}>Gyldig fravær</span>
               </div>
-              <div className="w-12 text-center">
-                <span className="text-red-600 font-extrabold">U</span>
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-extrabold text-2xl" style={{ lineHeight: '1', color: '#EF4444' }}>U</span>
+            <span className="text-xs font-medium whitespace-nowrap" style={{ color: '#006C75', lineHeight: '1' }}>Ugyldig fravær</span>
               </div>
             </div>
-          </div>
-          <div className="space-y-2 max-h-96 overflow-y-auto">
-            {classStudents.map((student: any) => (
-              <div key={student._id} className="flex items-center gap-2 py-2 border-b" style={{ borderColor: 'rgba(0, 108, 117, 0.1)' }}>
-                <div className="text-sm flex-1 min-w-0" style={{ color: '#006C75' }}>
+
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {classStudents.map((student: any) => {
+            const currentStatus = attendance[student._id]
+            return (
+              <div 
+                key={student._id} 
+                className="p-4 rounded-xl border-2 transition-all hover:shadow-lg"
+                style={{ 
+                  backgroundColor: currentStatus === 'present' 
+                    ? 'rgba(16, 185, 129, 0.05)' 
+                    : currentStatus === 'late'
+                    ? 'rgba(249, 115, 22, 0.05)'
+                    : currentStatus === 'absent'
+                    ? 'rgba(239, 68, 68, 0.05)'
+                    : 'white',
+                  borderColor: currentStatus === 'present'
+                    ? 'rgba(16, 185, 129, 0.3)'
+                    : currentStatus === 'late'
+                    ? 'rgba(249, 115, 22, 0.3)'
+                    : currentStatus === 'absent'
+                    ? 'rgba(239, 68, 68, 0.3)'
+                    : 'rgba(0, 108, 117, 0.1)',
+                  boxShadow: currentStatus ? '0 4px 12px rgba(0, 0, 0, 0.08)' : 'none'
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-bold text-base mb-1" style={{ color: '#006C75' }}>
                   {student.name}
+                    </h4>
                 </div>
-                <div className="flex items-center gap-4">
-                  <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-green-50 hover:scale-105" style={{ minWidth: '48px' }}>
-                    <span className="text-xs font-extrabold text-green-600">M</span>
-                  <input
-                    type="radio"
-                    name={`attendance-${student._id}`}
-                    checked={attendance[student._id] === 'present'}
-                    onChange={() => handleStatusChange(student._id, 'present')}
-                      className="w-5 h-5"
-                      style={{ accentColor: '#10B981' }}
-                  />
-                  </label>
-                  <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-orange-50 hover:scale-105" style={{ minWidth: '48px' }}>
-                    <span className="text-xs font-extrabold text-orange-600">G</span>
-                  <input
-                    type="radio"
-                    name={`attendance-${student._id}`}
-                    checked={attendance[student._id] === 'late'}
-                    onChange={() => handleStatusChange(student._id, 'late')}
-                      className="w-5 h-5"
-                      style={{ accentColor: '#F97316' }}
-                  />
-                  </label>
-                  <label className="flex flex-col items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-all hover:bg-red-50 hover:scale-105" style={{ minWidth: '48px' }}>
-                    <span className="text-xs font-extrabold text-red-600">U</span>
-                  <input
-                    type="radio"
-                    name={`attendance-${student._id}`}
-                    checked={attendance[student._id] === 'absent'}
-                    onChange={() => handleStatusChange(student._id, 'absent')}
-                      className="w-5 h-5"
-                      style={{ accentColor: '#EF4444' }}
-                  />
-                  </label>
+                  <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleStatusChange(student._id, 'present')}
+                        className={`px-4 py-2 rounded-lg font-extrabold text-base transition-all ${
+                          currentStatus === 'present'
+                            ? 'text-white shadow-lg scale-105'
+                            : 'text-green-600 hover:bg-green-50'
+                        }`}
+                        style={{
+                          background: currentStatus === 'present'
+                            ? 'linear-gradient(135deg, #10B981, #059669)'
+                            : 'transparent',
+                          border: currentStatus === 'present' ? 'none' : '2px solid rgba(16, 185, 129, 0.3)'
+                        }}
+                      >
+                        M
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student._id, 'late')}
+                        className={`px-4 py-2 rounded-lg font-extrabold text-base transition-all ${
+                          currentStatus === 'late'
+                            ? 'text-white shadow-lg scale-105'
+                            : 'text-orange-600 hover:bg-orange-50'
+                        }`}
+                        style={{
+                          background: currentStatus === 'late'
+                            ? 'linear-gradient(135deg, #F97316, #EA580C)'
+                            : 'transparent',
+                          border: currentStatus === 'late' ? 'none' : '2px solid rgba(249, 115, 22, 0.3)'
+                        }}
+                      >
+                        G
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student._id, 'absent')}
+                        className={`px-4 py-2 rounded-lg font-extrabold text-base transition-all ${
+                          currentStatus === 'absent'
+                            ? 'text-white shadow-lg scale-105'
+                            : 'text-red-600 hover:bg-red-50'
+                        }`}
+                        style={{
+                          background: currentStatus === 'absent'
+                            ? 'linear-gradient(135deg, #EF4444, #DC2626)'
+                            : 'transparent',
+                          border: currentStatus === 'absent' ? 'none' : '2px solid rgba(239, 68, 68, 0.3)',
+                          color: currentStatus === 'absent' ? 'white' : '#EF4444'
+                        }}
+                      >
+                        <span style={{ color: currentStatus === 'absent' ? 'white' : '#EF4444' }}>U</span>
+                      </button>
                 </div>
               </div>
-            ))}
           </div>
-          <Button onClick={onClose} className="w-full" style={{ backgroundColor: '#00A7B3', color: 'white' }}>
-            Last opp
-          </Button>
+            )
+          })}
         </div>
+        
+        {/* Summary at bottom */}
+        <div className="mt-6 p-4 rounded-xl border-2" style={{ 
+          backgroundColor: 'rgba(0, 167, 179, 0.05)', 
+          borderColor: 'rgba(0, 167, 179, 0.2)' 
+        }}>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Møtt:</span>
+              <span className="text-lg font-extrabold" style={{ color: '#10B981' }}>{counts.present}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Gyldig fravær:</span>
+              <span className="text-lg font-extrabold" style={{ color: '#F97316' }}>{counts.late}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Ugyldig fravær:</span>
+              <span className="text-lg font-extrabold" style={{ color: '#EF4444' }}>{counts.absent}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold" style={{ color: '#006C75' }}>Mangler registrering:</span>
+              <span className="text-lg font-extrabold" style={{ color: '#000000' }}>
+                {counts.unregistered}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <Button 
+          onClick={onClose} 
+          className="w-full mt-4 font-bold text-base py-6 shadow-lg hover:shadow-xl transition-all"
+          style={{ 
+            background: 'linear-gradient(135deg, #00A7B3, #00C4D4)', 
+            color: 'white',
+            border: 'none'
+          }}
+        >
+          Lagre oppmøte
+        </Button>
       </DialogContent>
     </Dialog>
   )

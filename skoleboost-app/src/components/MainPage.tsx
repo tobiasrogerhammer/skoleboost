@@ -432,7 +432,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
         setShowAllEvents(open)
         if (!open) setShowMoreInDialog(false) // Reset when dialog closes
       }}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Sosiale Arrangementer 🎉</DialogTitle>
           </DialogHeader>
@@ -616,9 +616,9 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
 
       {/* Coupon Redemption Confirmation Modal */}
       <Dialog open={redeemedCoupon !== null} onOpenChange={(open) => !open && setRedeemedCoupon(null)}>
-        <DialogContent className="max-w-md" style={{ borderRadius: '20px' }}>
+        <DialogContent className="max-w-[90vw] max-h-[85vh]" style={{ borderRadius: '20px', width: '90vw', maxWidth: '90vw' }}>
           <DialogHeader>
-            <div className="flex items-center justify-center mb-4">
+            <div className="flex items-center justify-center mb-2">
               <div className="p-4 rounded-full" style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>
                 <CheckCircle2 className="w-12 h-12 text-white" />
               </div>
@@ -629,14 +629,14 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
           </DialogHeader>
           
           {redeemedCoupon && (
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4 mt-2">
               {/* Coupon Details */}
-              <Card className="p-4 border-2" style={{ 
+              <Card className="p-3 border-2" style={{ 
                 background: 'linear-gradient(135deg, #E8F6F6, rgba(0, 167, 179, 0.1))', 
                 borderColor: 'rgba(0, 167, 179, 0.3)',
                 borderRadius: '16px'
               }}>
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3 mb-1">
                   <span className="text-4xl">{redeemedCoupon.coupon.emoji}</span>
                   <div className="flex-1">
                     <h3 className="font-bold text-lg" style={{ color: '#006C75' }}>
@@ -678,17 +678,36 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
                 </div>
               </div>
 
-              {/* Instructions */}
-              <div className="p-4 rounded-lg border-2" style={{ 
-                backgroundColor: '#FFF9E6',
-                borderColor: '#FBBE9E',
+              {/* Barcode Verification */}
+              <div className="p-3 rounded-lg border-2 bg-white" style={{ 
+                borderColor: 'rgba(0, 108, 117, 0.2)',
                 borderRadius: '12px'
               }}>
-                <p className="text-sm font-semibold text-center" style={{ color: '#006C75' }}>
-                   Vis denne skjermen til kafeteriapersonellet
+                <p className="text-xs font-semibold text-center mb-2" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>
+                  Verifiseringskode
+                </p>
+                {/* Barcode visual representation */}
+                <div className="flex items-center justify-center gap-1 mb-1.5" style={{ height: '40px', backgroundColor: 'white', width: '90%', margin: '0 auto' }}>
+                  {Array.from({ length: 40 }).map((_, i) => {
+                    const width = Math.random() * 2 + 0.5
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          width: `${width}px`,
+                          height: '35px',
+                          backgroundColor: '#000',
+                          display: 'inline-block'
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+                {/* Barcode number */}
+                <p className="text-[10px] font-mono text-center tracking-widest" style={{ color: '#006C75', letterSpacing: '1px' }}>
+                  {redeemedCoupon.coupon._id?.toString().slice(0, 8).toUpperCase() || 'SKB' + Math.random().toString(36).substring(2, 10).toUpperCase()}
                 </p>
               </div>
-
               {/* Close Button */}
               <Button
                 onClick={() => setRedeemedCoupon(null)}

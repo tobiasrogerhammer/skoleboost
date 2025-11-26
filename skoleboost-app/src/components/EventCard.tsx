@@ -166,7 +166,7 @@ export const EventCard: React.FC<EventCardProps> = ({ event, eventType, onRSVP, 
 
       {/* Event Detail Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px', width: '90vw', maxWidth: '90vw' }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {event.emoji && <span className="text-xl">{event.emoji}</span>}

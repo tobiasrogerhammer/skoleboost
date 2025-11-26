@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { User, Award, TrendingUp, Calendar, Target, Star, Coins, Map, CheckCircle2, Lock, Mail, GraduationCap } from 'lucide-react'
+import { User, Award, TrendingUp, Calendar, Target, Star, Coins, Map, CheckCircle2, Lock, Mail, GraduationCap, ChevronDown, ChevronUp } from 'lucide-react'
 import { Card } from './ui/card'
 import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
@@ -17,6 +17,7 @@ interface Achievement {
   icon: string
   earned: boolean
   progress?: number
+  points: number
 }
 
 interface ProfilePageProps {
@@ -31,14 +32,16 @@ const mockAchievements: Achievement[] = [
     title: 'Perfekt Uke',
     description: 'Deltatt på alle timer i en hel uke',
     icon: '🏆',
-    earned: true
+    earned: true,
+    points: 50
   },
   {
     id: '2',
     title: 'Morgenfugl',
     description: 'Ankom tidlig til 10 timer på rad',
     icon: '🌅',
-    earned: true
+    earned: true,
+    points: 30
   },
   {
     id: '3',
@@ -46,7 +49,8 @@ const mockAchievements: Achievement[] = [
     description: 'Tjent 500 totale poeng',
     icon: '💎',
     earned: false,
-    progress: 78
+    progress: 78,
+    points: 100
   },
   {
     id: '4',
@@ -54,14 +58,16 @@ const mockAchievements: Achievement[] = [
     description: 'Deltatt på 5 skolearrangementer',
     icon: '🦋',
     earned: false,
-    progress: 60
+    progress: 60,
+    points: 75
   },
   {
     id: '5',
     title: 'Konsistent Lærer',
     description: 'Opprettholdt 90% oppmøte i en måned',
     icon: '📚',
-    earned: true
+    earned: true,
+    points: 60
   },
   {
     id: '6',
@@ -69,7 +75,8 @@ const mockAchievements: Achievement[] = [
     description: 'Hjalp klassekamerater 20 ganger',
     icon: '🤝',
     earned: false,
-    progress: 45
+    progress: 45,
+    points: 40
   }
 ]
 
@@ -84,13 +91,14 @@ const getStudentInfo = (user: any) => ({
 })
 
 export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap }: ProfilePageProps) {
+  const [showMoreAchievements, setShowMoreAchievements] = useState(false)
   const currentUser = useQuery(api.users.getCurrentUser, {})
   const achievements = useQuery(api.users.getAchievements, {}) || mockAchievements
   const earnedAchievements = achievements.filter((achievement: any) => achievement.earned)
   const studentInfo = getStudentInfo(currentUser)
   
   return (
-    <div className="pb-20 px-4 max-w-md mx-auto space-y-2 relative" style={{ paddingTop: '2.5rem' }}>
+    <div className="pb-20 px-4 max-w-md mx-auto space-y-6 relative" style={{ paddingTop: '2.5rem' }}>
       {/* Logo and Brand Name - Top Left */}
       <div className="absolute top-4 left-4 z-50 flex items-center gap-2">
         <Logo size="xs" />
@@ -173,7 +181,7 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
 
       {/* Enhanced Detailed Stats */}
       <Card className="p-4 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.08), #E8F6F6, rgba(0, 167, 179, 0.08))', borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '16px' }}>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-1">
           <div>
             <h3 className="mb-0.5 flex items-center gap-2 font-extrabold text-lg" style={{ color: '#006C75' }}>
               <TrendingUp className="w-5 h-5" style={{ color: '#00A7B3' }} />
@@ -218,21 +226,21 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
       </Card>
 
       {/* Enhanced Achievements */}
-      <Card className="p-5 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(251, 190, 158, 0.15), #FFF5F0, rgba(251, 190, 158, 0.15))', borderColor: 'rgba(251, 190, 158, 0.4)', borderRadius: '20px' }}>
-        <div className="flex items-center justify-between mb-5">
+      <Card className="p-4 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(251, 190, 158, 0.15), #FFF5F0, rgba(251, 190, 158, 0.15))', borderColor: 'rgba(251, 190, 158, 0.4)', borderRadius: '20px' }}>
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="mb-1 flex items-center gap-2 font-extrabold text-xl" style={{ color: '#B45309' }}>
-              <Award className="w-6 h-6" style={{ color: '#FF9F66' }} />
+            <h3 className="mb-0.5 flex items-center gap-2 font-extrabold text-lg" style={{ color: '#B45309' }}>
+              <Award className="w-5 h-5" style={{ color: '#FF9F66' }} />
               Prestasjoner
         </h3>
             <p className="text-xs font-medium" style={{ color: 'rgba(180, 83, 9, 0.7)' }}>Lås opp ditt potensial! ⭐</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-3">
-          {mockAchievements.map((achievement) => (
+        <div className="grid grid-cols-1 gap-2">
+          {(showMoreAchievements ? mockAchievements : mockAchievements.slice(0, 3)).map((achievement) => (
             <div
               key={achievement.id}
-                  className="flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-300 hover:scale-[1.02] relative"
+                  className="flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:scale-[1.02] relative"
                   style={achievement.earned
                     ? { 
                         background: 'linear-gradient(135deg, #FFF5F0, white, #FFF5F0)', 
@@ -250,120 +258,142 @@ export function ProfilePage({ currentPoints, totalEarned, onNavigateToJourneyMap
                       }
                   }
                 >
-                  <div className={`text-4xl transform hover:scale-110 transition-transform relative ${achievement.earned ? '' : 'grayscale opacity-60'}`}>
+                  <div className={`text-4xl transform hover:scale-110 transition-transform relative flex-shrink-0 ${achievement.earned ? '' : 'grayscale opacity-60'}`}>
                     {achievement.icon}
+                  </div>
+              <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className={`font-extrabold text-sm truncate ${achievement.earned ? '' : 'opacity-60'}`} style={{ color: achievement.earned ? '#B45309' : '#6b7280' }}>
+                      {achievement.title}
+                    </h4>
                     {achievement.earned && (
-                      <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white">
-                      </div>
+                      <Badge className="bg-green-500 text-white border-0 font-bold px-3 py-0.5 text-[10px] shadow-md flex-shrink-0 flex items-center gap-1">
+                        Oppnådd +{achievement.points}p
+                      </Badge>
                     )}
                     {!achievement.earned && (
-                      <div className="absolute -top-1 -right-1 bg-gray-400 rounded-full p-0.5 border-2 border-white">
-                        <Lock className="w-4 h-4 text-white" />
-                      </div>
+                      <Badge className="bg-gray-400 text-white border-0 font-bold px-3 py-0.5 text-[10px] shadow-md flex-shrink-0 flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5" />
+                        Låst +{achievement.points}p
+                      </Badge>
                     )}
                   </div>
-              <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className={`font-extrabold text-base ${achievement.earned ? '' : 'opacity-60'}`} style={{ color: achievement.earned ? '#B45309' : '#6b7280' }}>
-                        {achievement.title}
-                      </h4>
-                      {achievement.earned && (
-                        <Badge className="bg-green-500 text-white border-0 font-bold px-2 py-0.5 text-xs shadow-md">
-                          Oppnådd
-                        </Badge>
-                      )}
-                      {!achievement.earned && (
-                        <Badge className="bg-gray-400 text-white border-0 font-bold px-2 py-0.5 text-xs shadow-md">
-                          <Lock className="w-3 h-3 mr-1" />
-                          Låst
-                        </Badge>
-                      )}
-                </div>
-                    <p className={`text-sm mb-3 font-medium leading-relaxed ${achievement.earned ? '' : 'opacity-60'}`} style={{ color: achievement.earned ? 'rgba(180, 83, 9, 0.9)' : '#6b7280' }}>
-                  {achievement.description}
-                </p>
-                {!achievement.earned && achievement.progress && (
-                      <div className="mt-2">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-xs font-semibold" style={{ color: '#6b7280' }}>Fremgang</span>
-                          <span className="text-xs font-extrabold" style={{ color: '#FF9F66' }}>{achievement.progress}%</span>
-                        </div>
-                        <div className="w-full h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(251, 190, 158, 0.2)' }}>
-                          <div 
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{ 
-                              width: `${achievement.progress}%`, 
-                              background: 'linear-gradient(90deg, #FF9F66, #FFB84D)',
-                              boxShadow: '0 0 10px rgba(251, 190, 158, 0.3)'
-                            }}
-                          ></div>
+                  <p className={`text-xs font-medium leading-tight ${achievement.earned ? '' : 'opacity-60'}`} style={{ color: achievement.earned ? 'rgba(180, 83, 9, 0.9)' : '#6b7280' }}>
+                    {achievement.description}
+                  </p>
+                  {!achievement.earned && achievement.progress && (
+                    <div className="w-full h-1.5 rounded-full overflow-hidden mt-2" style={{ backgroundColor: 'rgba(251, 190, 158, 0.2)' }}>
+                      <div 
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${achievement.progress}%`, 
+                          background: 'linear-gradient(90deg, #FF9F66, #FFB84D)',
+                          boxShadow: '0 0 10px rgba(251, 190, 158, 0.3)'
+                        }}
+                      ></div>
                     </div>
+                  )}
+                </div>
+                {!achievement.earned && achievement.progress && (
+                  <div className="flex-shrink-0 text-right">
+                    <span className="text-xs font-extrabold" style={{ color: '#FF9F66' }}>{achievement.progress}%</span>
                   </div>
                 )}
               </div>
             </div>
           ))}
         </div>
+        {mockAchievements.length > 3 && (
+          <Button
+            onClick={() => setShowMoreAchievements(!showMoreAchievements)}
+            className="w-full mt-1 flex items-center justify-center gap-2 hover:bg-opacity-10 transition-all"
+            style={{
+              background: 'transparent',
+              color: '#006C75',
+              border: '2px solid rgba(0, 108, 117, 0.3)',
+              borderRadius: '12px',
+              padding: '10px 16px',
+              fontWeight: '600'
+            }}
+          >
+            {showMoreAchievements ? (
+              <>
+                <ChevronUp className="w-5 h-5" />
+                Vis færre
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-5 h-5" />
+                Vis flere ({mockAchievements.length - 3})
+              </>
+            )}
+          </Button>
+        )}
       </Card>
 
-      {/* Event Participation */}
-      <EventParticipation />
-
       {/* Enhanced Goals */}
-      <Card className="p-5 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(251, 190, 158, 0.15), #FFF5F0, rgba(251, 190, 158, 0.15))', borderColor: 'rgba(251, 190, 158, 0.4)', borderRadius: '20px' }}>
-        <div className="flex items-center justify-between mb-5">
+      <Card className="p-4 border-2 shadow-xl" style={{ background: 'linear-gradient(135deg, rgba(0, 167, 179, 0.08), #E8F6F6, rgba(0, 167, 179, 0.08))', borderColor: 'rgba(0, 167, 179, 0.3)', borderRadius: '20px' }}>
+        <div className="flex items-center justify-between mb-1">
           <div>
-            <h3 className="mb-1 flex items-center gap-2 font-extrabold text-xl" style={{ color: '#B45309' }}>
-              <Target className="w-6 h-6" style={{ color: '#FF9F66' }} />
+            <h3 className="mb-0.5 flex items-center gap-2 font-extrabold text-lg" style={{ color: '#006C75' }}>
+              <Target className="w-5 h-5" style={{ color: '#00A7B3' }} />
           Nåværende Mål
         </h3>
-            <p className="text-xs font-medium" style={{ color: 'rgba(180, 83, 9, 0.7)' }}>Fortsett å jobbe mot målet! 🎯</p>
+            <p className="text-xs font-medium" style={{ color: 'rgba(0, 108, 117, 0.7)' }}>Fortsett å jobbe mot målet! 🎯</p>
           </div>
         </div>
-        <div className="space-y-4">
-          <div className="p-5 rounded-xl border-2 shadow-xl transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #FBBE9E 0%, #FF9F66 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 25px rgba(251, 190, 158, 0.3)' }}>
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h4 className="text-white font-extrabold text-lg mb-1">🎯 Nå 500 Poeng</h4>
-                <p className="text-xs text-white/90 font-medium">Du er nesten der!</p>
+        <div className="space-y-3">
+          <div className="p-3 rounded-xl border-2 shadow-xl transition-all hover:scale-[1.01]" style={{ background: 'linear-gradient(135deg, #FBBE9E 0%, #FF9F66 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '12px', boxShadow: '0 4px 12px rgba(251, 190, 158, 0.3)' }}>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🎯</span>
+                <div>
+                  <h4 className="text-white font-extrabold text-sm">Nå 500 Poeng</h4>
+                  <p className="text-[8px] text-white/90 font-medium">{500 - totalEarned} poeng igjen</p>
+                </div>
               </div>
-              <span className="text-sm text-white font-extrabold px-3 py-1.5 rounded-full shadow-md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>{totalEarned}/500</span>
+              <span className="text-xs text-white font-extrabold px-2 py-1 rounded-full shadow-md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>{totalEarned}/500</span>
             </div>
-            <div className="w-full h-4 rounded-full overflow-hidden shadow-inner" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+            <div className="w-full h-3 rounded-full overflow-hidden shadow-inner border" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.4)' }}>
               <div 
                 className="h-full rounded-full transition-all duration-500 shadow-lg"
                 style={{ 
                   width: `${(totalEarned / 500) * 100}%`, 
                   background: 'linear-gradient(90deg, white, rgba(255, 255, 255, 0.8))',
-                  boxShadow: '0 0 15px rgba(255, 255, 255, 0.5)'
+                  boxShadow: '0 0 10px rgba(255, 255, 255, 0.4)'
                 }}
               ></div>
             </div>
-            <p className="text-xs text-white/90 font-semibold mt-2">{500 - totalEarned} poeng igjen!</p>
           </div>
           
-          <div className="p-5 rounded-xl border-2 shadow-xl transition-all hover:scale-[1.02]" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '16px', boxShadow: '0 8px 25px rgba(0, 167, 179, 0.3)' }}>
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <h4 className="text-white font-extrabold text-lg mb-1">📅 Perfekt Oppmøte Måned</h4>
-                <p className="text-xs text-white/90 font-medium">Hold deg konsistent!</p>
+          <div className="p-3 rounded-xl border-2 shadow-xl transition-all hover:scale-[1.01]" style={{ background: 'linear-gradient(135deg, #00A7B3 0%, #00C4D4 100%)', borderColor: 'rgba(255, 255, 255, 0.3)', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 167, 179, 0.3)' }}>
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📅</span>
+                <div>
+                  <h4 className="text-white font-extrabold text-sm">Perfekt Oppmøte Måned</h4>
+                  <p className="text-[8px] text-white/90 font-medium">12 dager igjen</p>
+                </div>
               </div>
-              <span className="text-sm text-white font-extrabold px-3 py-1.5 rounded-full shadow-md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>18/30 dager</span>
+              <span className="text-xs text-white font-extrabold px-2 py-1 rounded-full shadow-md" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}>18/30</span>
             </div>
-            <div className="w-full h-4 rounded-full overflow-hidden shadow-inner" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+            <div className="w-full h-3 rounded-full overflow-hidden shadow-inner border" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', borderColor: 'rgba(255, 255, 255, 0.4)' }}>
               <div 
                 className="h-full rounded-full transition-all duration-500 shadow-lg"
                 style={{ 
                   width: `${(18 / 30) * 100}%`, 
                   background: 'linear-gradient(90deg, white, rgba(255, 255, 255, 0.8))',
-                  boxShadow: '0 0 15px rgba(255, 255, 255, 0.5)'
+                  boxShadow: '0 0 10px rgba(255, 255, 255, 0.4)'
                 }}
               ></div>
             </div>
-            <p className="text-xs text-white/90 font-semibold mt-2">4 dager igjen til perfekt oppmøte!</p>
           </div>
         </div>
       </Card>
+
+      {/* Event Participation */}
+      <EventParticipation />
     </div>
   )
 }
