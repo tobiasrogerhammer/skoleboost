@@ -429,7 +429,7 @@ function ClassStudentsDialog({
 }) {
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-[500px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px', overflowX: 'hidden', width: '90vw', maxWidth: '500px' }}>
+      <DialogContent className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px', overflowX: 'hidden' }}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold" style={{ color: '#006C75' }}>
             {classObj?.name || 'Klasse'} - Elever

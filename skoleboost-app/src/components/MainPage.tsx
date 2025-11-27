@@ -432,7 +432,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
         setShowAllEvents(open)
         if (!open) setShowMoreInDialog(false) // Reset when dialog closes
       }}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+        <DialogContent className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Sosiale Arrangementer 🎉</DialogTitle>
           </DialogHeader>
@@ -616,7 +616,7 @@ export function MainPage({ currentPoints, totalEarned, onRedeemCoupon }: MainPag
 
       {/* Coupon Redemption Confirmation Modal */}
       <Dialog open={redeemedCoupon !== null} onOpenChange={(open) => !open && setRedeemedCoupon(null)}>
-        <DialogContent className="max-w-[90vw] max-h-[85vh]" style={{ borderRadius: '20px', width: '90vw', maxWidth: '90vw' }}>
+        <DialogContent className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[85vh]" style={{ borderRadius: '20px' }}>
           <DialogHeader>
             <div className="flex items-center justify-center mb-2">
               <div className="p-4 rounded-full" style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}>

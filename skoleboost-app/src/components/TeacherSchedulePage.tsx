@@ -393,8 +393,8 @@ function AttendanceDialog({
   return (
     <Dialog open onOpenChange={onClose} key={`${scheduleItem._id}-${attendanceDate}`}>
       <DialogContent 
-        className="max-h-[90vh] overflow-y-auto"
-        style={{ maxWidth: '95vw', width: '95vw', overflowX: 'hidden' }}
+        className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto"
+        style={{ overflowX: 'hidden' }}
       >
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold" style={{ color: '#006C75' }}>

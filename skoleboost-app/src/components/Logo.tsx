@@ -3,10 +3,11 @@ import React from 'react'
 // Import logo image
 import logoImage from '../assets/skoleboost-removebg-preview.png'
 
-export function Logo({ size = 'md' }: { size?: 'xs' | 'sm' | 'md' | 'lg' }) {
+export function Logo({ size = 'md' }: { size?: 'xs' | 'sm' | 'sm-md' | 'md' | 'lg' }) {
   const sizes = {
     xs: { icon: 32 },
     sm: { icon: 64 },
+    'sm-md': { icon: 80 },
     md: { icon: 96 },
     lg: { icon: 128 }
   }

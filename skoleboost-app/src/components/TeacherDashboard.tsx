@@ -945,7 +945,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
 
       {/* All Coupons Dialog */}
       <Dialog open={showAllCouponsDialog} onOpenChange={setShowAllCouponsDialog}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+        <DialogContent className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Alle Kuponger</DialogTitle>
           </DialogHeader>
@@ -1054,7 +1054,7 @@ export function TeacherDashboard({ teacher }: TeacherDashboardProps) {
 
       {/* All Events Dialog */}
       <Dialog open={showAllEventsDialog} onOpenChange={setShowAllEventsDialog}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+        <DialogContent className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold" style={{ color: '#006C75' }}>Alle Arrangementer</DialogTitle>
           </DialogHeader>
@@ -1471,7 +1471,7 @@ function CreateCouponDialog({ coupon, onClose }: { coupon?: any, onClose: () => 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{coupon ? 'Rediger kupong' : 'Ny kupong'}</DialogTitle>
           <DialogDescription>
@@ -1646,7 +1646,7 @@ function CreateEventDialog({ event, onClose }: { event?: any, onClose: () => voi
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-[90vw] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
+      <DialogContent className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold" style={{ color: '#006C75' }}>
             {event ? 'Rediger arrangement' : 'Nytt arrangement'}
@@ -1781,7 +1781,7 @@ function ClassStudentsDialog({
 }) {
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-[500px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px', width: '90vw', maxWidth: '500px' }}>
+      <DialogContent className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto" style={{ borderRadius: '20px' }}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold" style={{ color: '#006C75' }}>
             {classObj?.name || 'Klasse'} - Elever
@@ -1809,52 +1809,52 @@ function ClassStudentsDialog({
                 <div className="flex items-start gap-2.5">
                   <div className="rounded-full flex items-center justify-center flex-shrink-0 shadow-sm mr-1" style={{ background: 'linear-gradient(135deg, #E8A5FF, #C77DFF)', padding: '8px 12px', minWidth: '32px', height: '32px' }}>
                     <span className="text-white font-bold" style={{ fontSize: '11px' }}>{index + 1}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
+                    </div>
+                    <div className="flex-1 min-w-0">
                     <h4 className="font-bold mb-1.5 truncate" style={{ color: '#006C75', fontSize: '15px', lineHeight: '1.3' }}>
-                      {student.name}
-                    </h4>
-                    {student.parentName && (
-                      <div className="space-y-1">
+                        {student.name}
+                      </h4>
+                      {student.parentName && (
+                        <div className="space-y-1">
                         <div className="flex items-center gap-1.5">
                           <Users className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.7)' }} />
                           <span className="truncate font-semibold" style={{ color: '#006C75', fontSize: '12px' }}>
-                            {student.parentName}
-                          </span>
-                        </div>
-                        {(student.parentPhone || student.parentEmail) && (
-                          <div className="flex items-center gap-3 flex-wrap">
-                            {student.parentPhone && (
+                              {student.parentName}
+                            </span>
+                          </div>
+                          {(student.parentPhone || student.parentEmail) && (
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {student.parentPhone && (
                               <div className="flex items-center gap-1.5 flex-1 min-w-0">
                                 <Phone className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.6)' }} />
-                                <a 
-                                  href={`tel:${student.parentPhone}`}
+                                  <a 
+                                    href={`tel:${student.parentPhone}`}
                                   className="hover:underline truncate" 
                                   style={{ color: '#00A7B3', fontSize: '11px' }}
-                                >
-                                  {student.parentPhone}
-                                </a>
-                              </div>
-                            )}
-                            {student.parentPhone && student.parentEmail && (
+                                  >
+                                    {student.parentPhone}
+                                  </a>
+                                </div>
+                              )}
+                              {student.parentPhone && student.parentEmail && (
                               <span className="text-[10px] flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.4)' }}>•</span>
-                            )}
-                            {student.parentEmail && (
+                              )}
+                              {student.parentEmail && (
                               <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <Mail className="w-3 h-3 flex-shrink-0" style={{ color: 'rgba(0, 108, 117, 0.6)' }} />
-                                <a 
-                                  href={`mailto:${student.parentEmail}`}
+                                  <a 
+                                    href={`mailto:${student.parentEmail}`}
                                   className="hover:underline truncate" 
                                   style={{ color: '#00A7B3', fontSize: '11px' }}
-                                >
-                                  {student.parentEmail}
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                                  >
+                                    {student.parentEmail}
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                   </div>
                 </div>
               </Card>
@@ -1970,8 +1970,7 @@ function AttendanceDialog({
   return (
     <Dialog open onOpenChange={onClose} key={`${scheduleItem._id}-${attendanceDate}`}>
       <DialogContent 
-        className="max-h-[90vh] overflow-y-auto"
-        style={{ maxWidth: '95vw', width: '95vw' }}
+        className="max-w-[90vw] md:max-w-[500px] lg:max-w-[600px] max-h-[90vh] overflow-y-auto"
       >
         <DialogHeader>
           <DialogTitle className="text-xl font-extrabold" style={{ color: '#006C75' }}>

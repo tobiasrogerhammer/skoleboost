@@ -14,11 +14,13 @@ import AcademicJourneyMap from './AcademicJourneyMap'
 import { toast } from 'sonner'
 import { Map, BookOpen, User, GraduationCap, School } from 'lucide-react'
 import { Button } from './components/ui/button'
+import { LandingPage } from './components/LandingPage'
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('main')
   const [userCreationAttempted, setUserCreationAttempted] = useState(false)
   const [showSignUp, setShowSignUp] = useState(false)
+  const [showLandingPage, setShowLandingPage] = useState(true)
   const [clerkUserId, setClerkUserId] = useState<string | null>(null)
   
   // Use Convex auth to check authentication state (ensures token is fetched and validated)
@@ -108,31 +110,52 @@ export default function App() {
   return (
     <>
       <Unauthenticated>
-        <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-4">
-          {showSignUp ? (
-            <SignUp 
-              appearance={{
-                elements: {
-                  rootBox: "mx-auto",
-                  card: "shadow-2xl",
-                },
-              }}
-              signInUrl="/sign-in"
-              fallbackRedirectUrl="/"
-            />
-          ) : (
-            <SignIn 
-              appearance={{
-                elements: {
-                  rootBox: "mx-auto",
-                  card: "shadow-2xl",
-                },
-              }}
-              signUpUrl="/sign-up"
-              fallbackRedirectUrl="/"
-            />
-          )}
-        </div>
+        {showLandingPage ? (
+          <LandingPage onGetStarted={() => setShowLandingPage(false)} />
+        ) : (
+          <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-4">
+            <div className="w-full max-w-md md:max-w-lg lg:max-w-xl">
+              <div className="mb-6 text-center md:text-left">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowLandingPage(true)}
+                  className="mb-4 md:mb-6 font-semibold"
+                  style={{ 
+                    color: '#006C75',
+                    borderColor: '#006C75',
+                    fontSize: '16px',
+                    padding: '12px 24px'
+                  }}
+                >
+                  ← Tilbake
+                </Button>
+              </div>
+              {showSignUp ? (
+                <SignUp 
+                  appearance={{
+                    elements: {
+                      rootBox: "mx-auto w-full",
+                      card: "shadow-2xl md:scale-110 lg:scale-125",
+                    },
+                  }}
+                  signInUrl="/sign-in"
+                  fallbackRedirectUrl="/"
+                />
+              ) : (
+                <SignIn 
+                  appearance={{
+                    elements: {
+                      rootBox: "mx-auto w-full",
+                      card: "shadow-2xl md:scale-110 lg:scale-125",
+                    },
+                  }}
+                  signUpUrl="/sign-up"
+                  fallbackRedirectUrl="/"
+                />
+              )}
+            </div>
+          </div>
+        )}
       </Unauthenticated>
       <AuthLoading>
         <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center">
