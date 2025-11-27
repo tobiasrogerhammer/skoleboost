@@ -156,7 +156,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                 color: 'rgba(0, 108, 117, 0.9)', 
                 fontSize: isLargeDesktop ? '16px' : isDesktop ? '15px' : '14px' 
               }}>
-                SkoleBoost er en digital plattform som kombinerer timeplanhåndtering, oppmøtesporing, sosial deltakelse og belønningssystemer for å skape en mer engasjerende skoleopplevelse. Gjennom poengbaserte prestasjoner, arrangementer og transparent fremgangssporing, motiverer vi elever til aktiv deltakelse og reduserer fravær.
+                SkoleBoost er en digital plattform som kombinerer belønningssystemer, timeplanhåndtering, oppmøteregistrering, og sosiale aktiviteter for å skape en mer engasjerende skoleopplevelse. Gjennom poengbaserte prestasjoner, arrangementer og tydelig visning av egen progresjon, motiverer vi elever til aktiv deltakelse og reduserer fravær.
               </p>
             </div>
           </div>
